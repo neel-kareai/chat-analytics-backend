@@ -10,6 +10,7 @@ class UserDocument(Base):
     id = Column(Integer, primary_key=True, index=True)
     customer_uuid = Column(UUID(as_uuid=True), ForeignKey(
         'customers.uuid'), nullable=False)
+    document_type = Column(String, nullable=False)
     document_name = Column(String, nullable=False)
     document_url = Column(String, nullable=False)
     embed_url = Column(String, nullable=False)
