@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 from db.queries.customer import CustomerQuery
 from logger import logger
 import re
-# last login
 
 router = APIRouter(prefix="/customer", tags=["customer"])
 
