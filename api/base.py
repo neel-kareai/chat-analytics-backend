@@ -6,12 +6,14 @@ from logger import logger
 from api.v1 import customer
 from api.v1 import db_operation
 from api.v1 import csv
+from api.v1 import query
 
 router = APIRouter()
 
 router.include_router(customer.router, prefix="/v1")
 router.include_router(db_operation.router, prefix="/v1")
 router.include_router(csv.router, prefix="/v1")
+router.include_router(query.router, prefix="/v1")
 
 @router.get("/health")
 async def get_system_health() -> APIResponseBase:

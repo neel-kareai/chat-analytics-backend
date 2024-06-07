@@ -17,3 +17,7 @@ class DBConfigQuery:
     @staticmethod
     def get_db_config_by_customer_uuid(db: Session, customer_uuid: str):
         return db.query(DBConfig).filter(DBConfig.customer_uuid == customer_uuid).all()
+    
+    @staticmethod
+    def get_db_config_by_id(db: Session, db_id: int):
+        return db.query(DBConfig).filter(DBConfig.id == db_id).first()
