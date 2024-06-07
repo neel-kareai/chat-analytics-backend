@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Depends
 from data_response.base_response import APIResponseBase
-from data_class.db_config import (
+from schemas.db_config import (
     NewDBCreateRequest,
     NewDBCreateResponse,
 )

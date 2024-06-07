@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Depends, Header
 from data_response.base_response import APIResponseBase
-from data_class.customer import (
+from schemas.customer import (
     CustomerLoginRequest,
     CustomerLoginResponse,
     CustomerRegisterRequest,
@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from db.queries.customer import CustomerQuery
 from logger import logger
 import re
+# last login
 
 router = APIRouter(prefix="/customer", tags=["customer"])
 
@@ -77,6 +78,9 @@ async def login_customer(request: CustomerLoginRequest,
 
     access_token = JWTHandler.create_access_token(access_token_data)
     refresh_token = JWTHandler.create_refresh_token(refresh_token_data)
+
+    # update last login
+    CustomerQuery.update_customer_last_login(db, customer)
 
     return APIResponseBase.success_response(
         data=CustomerLoginResponse(

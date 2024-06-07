@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from db.models.customer import Customer
 from helper.security import get_hashed_password, verify_password
-
+from datetime import datetime
 
 class CustomerQuery:
 
@@ -31,4 +31,10 @@ class CustomerQuery:
         if not verify_password(password.encode("utf-8"), customer.password):
             return None
 
+        return customer
+    
+    @staticmethod
+    def update_customer_last_login(db: Session, customer: Customer):
+        customer.last_login = datetime.utcnow()
+        db.commit()
         return customer

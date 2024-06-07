@@ -13,6 +13,7 @@ class Customer(Base):
     name = Column(String, index=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password = Column(LargeBinary, nullable=False)
+    last_login = Column(TIMESTAMP)
     created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
     updated_at = Column(TIMESTAMP, default=datetime.utcnow,
                         onupdate=datetime.utcnow, nullable=False)
