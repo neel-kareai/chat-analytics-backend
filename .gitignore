@@ -169,3 +169,6 @@ cython_debug/
 *.csv
 *.pkl
 *.json
+
+tmp/
+chroma_db/
