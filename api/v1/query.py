@@ -67,11 +67,16 @@ async def query(query_type: str,
             return APIResponseBase.unauthorized(
                 message="Unauthorized access"
             )
-        
-        response, sql_query = db_config_pipeline(
-            db_config.db_type,
-            db_config.db_config, request.query
-        )
+        try:
+            response, sql_query = db_config_pipeline(
+                db_config.db_type,
+                db_config.db_config, request.query
+            )
+        except Exception as e:
+            logger.error(f"Failed to query db: {e}")
+            return APIResponseBase.internal_server_error(
+                message="Failed to query db. Please check your query and try again."
+            )
 
     else:
         logger.error("Invalid query type")
