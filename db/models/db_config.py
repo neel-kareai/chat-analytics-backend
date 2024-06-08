@@ -2,7 +2,6 @@ from db import Base
 from sqlalchemy import Column, Integer, String, TIMESTAMP, ForeignKey, UUID, JSON
 from datetime import datetime
 from uuid import uuid4
-from json import JSONEncoder
 
 
 class DBConfig(Base):

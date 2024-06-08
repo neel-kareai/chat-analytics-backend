@@ -33,5 +33,13 @@ class UserDocumentQuery:
         return db.query(UserDocument).filter(UserDocument.customer_uuid == customer_uuid).all()
 
     @staticmethod
+    def update_embedding_path(db:Session, user_document_id:int, embedding_path:str):
+        user_document = db.query(UserDocument).filter(UserDocument.id == user_document_id).first()
+        user_document.embed_url = embedding_path
+        db.flush()
+        return user_document
+        
+
+    @staticmethod
     def delete_user_document(db: Session, user_document_id: int) -> bool:
         raise NotImplementedError("Method not implemented")

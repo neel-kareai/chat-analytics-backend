@@ -17,11 +17,11 @@ router = APIRouter(prefix="/customer", tags=["customer"])
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register_customer(request: CustomerRegisterRequest,
-                            db: Session = Depends(get_db)
-                            ) -> APIResponseBase:
+async def register_customer(
+    request: CustomerRegisterRequest, db: Session = Depends(get_db)
+) -> APIResponseBase:
     """
-        Register a new customer
+    Register a new customer
     """
 
     customer = CustomerQuery.get_customer_by_email(db, request.email)
@@ -40,7 +40,7 @@ async def register_customer(request: CustomerRegisterRequest,
         return APIResponseBase.internal_server_error(
             message="Failed to create customer"
         )
-    
+
     db.commit()
 
     return APIResponseBase.created(
@@ -49,11 +49,11 @@ async def register_customer(request: CustomerRegisterRequest,
 
 
 @router.post("/login")
-async def login_customer(request: CustomerLoginRequest,
-                         db: Session = Depends(get_db)
-                         ) -> APIResponseBase:
+async def login_customer(
+    request: CustomerLoginRequest, db: Session = Depends(get_db)
+) -> APIResponseBase:
     """
-        Login a customer
+    Login a customer
     """
 
     customer = CustomerQuery.get_customer_by_email_password(
@@ -62,9 +62,7 @@ async def login_customer(request: CustomerLoginRequest,
 
     if not customer:
         logger.error("Invalid email or password")
-        return APIResponseBase.unauthorized(
-            message="Invalid email or password"
-        )
+        return APIResponseBase.unauthorized(message="Invalid email or password")
 
     access_token_data = {
         "uuid": str(customer.uuid),
@@ -83,44 +81,38 @@ async def login_customer(request: CustomerLoginRequest,
 
     return APIResponseBase.success_response(
         data=CustomerLoginResponse(
-            access_token=access_token,
-            refresh_token=refresh_token
+            access_token=access_token, refresh_token=refresh_token
         ).model_dump(),
-        message="Login successful"
+        message="Login successful",
     )
 
 
 @router.post("/refresh-token")
-async def refresh_access_token(authorization: str = Header(None),
-                               db: Session = Depends(get_db)
-                               ) -> APIResponseBase:
+async def refresh_access_token(
+    authorization: str = Header(None), db: Session = Depends(get_db)
+) -> APIResponseBase:
     """
-        Refresh access token
+    Refresh access token
     """
 
     if not authorization:
         logger.error("Authorization header is missing")
-        return APIResponseBase.bad_request(
-            message="Authorization header is missing"
-        )
+        return APIResponseBase.bad_request(message="Authorization header is missing")
 
     # extract token from header
     refresh_token = re.sub(r"Bearer ", "", authorization)
 
     refresh_token_decoded: RefreshTokenData = JWTHandler.decode_refresh_token(
-        refresh_token)
+        refresh_token
+    )
     if not refresh_token_decoded:
         logger.error("Invalid refresh token")
-        return APIResponseBase.bad_request(
-            message="Invalid refresh token"
-        )
+        return APIResponseBase.bad_request(message="Invalid refresh token")
 
     customer = CustomerQuery.get_customer_by_uuid(db, refresh_token_decoded.uuid)
     if not customer:
         logger.error("Customer not found")
-        return APIResponseBase.not_found(
-            message="Customer not found"
-        )
+        return APIResponseBase.not_found(message="Customer not found")
 
     access_token_data = {
         "uuid": str(customer.uuid),
@@ -132,8 +124,7 @@ async def refresh_access_token(authorization: str = Header(None),
 
     return APIResponseBase.success_response(
         data=CustomerLoginResponse(
-            access_token=access_token,
-            refresh_token=refresh_token
+            access_token=access_token, refresh_token=refresh_token
         ).model_dump(),
-        message="Access token refreshed successfully"
+        message="Access token refreshed successfully",
     )

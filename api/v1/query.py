@@ -42,6 +42,13 @@ async def query(query_type: str,
             return APIResponseBase.unauthorized(
                 message="Unauthorized access"
             )
+        
+        # check if the document is embedded or not
+        if csv_file.is_embedded is None or csv_file.is_embedded is False:
+            logger.debug("Embedding is still in progress")
+            return APIResponseBase.bad_request(
+                message="document is still being processed"
+            )
 
         response = csv_pipeline(csv_file.embed_url, request.query)
 
@@ -60,7 +67,7 @@ async def query(query_type: str,
             return APIResponseBase.unauthorized(
                 message="Unauthorized access"
             )
-
+        
         response, sql_query = db_config_pipeline(
             db_config.db_type,
             db_config.db_config, request.query

@@ -1,6 +1,5 @@
 from db import Base
-from sqlalchemy import Column, Integer, String, TIMESTAMP, UUID, ForeignKey
-from uuid import uuid4
+from sqlalchemy import Column, Integer, String, TIMESTAMP, UUID, ForeignKey, Boolean
 from datetime import datetime
 
 
@@ -13,6 +12,7 @@ class UserDocument(Base):
     document_type = Column(String, nullable=False)
     document_name = Column(String, nullable=False)
     document_url = Column(String, nullable=False)
+    is_embedded = Column(Boolean, default=False)
     embed_url = Column(String, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
     updated_at = Column(TIMESTAMP, nullable=False,
