@@ -84,6 +84,8 @@ def generate_sql_query(query: str, db_schema: str) -> str:
 
     response = openai_client.chat.completions.create(
         model=Config.DEFAULT_OPENAI_MODEL,
+        temperature=0.0,
+        top_p=0.2,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": query_prompt},
@@ -133,6 +135,8 @@ def db_refine_query_result(query: str, query_result: str) -> str:
 
     response = openai_client.chat.completions.create(
         model=Config.DEFAULT_OPENAI_MODEL,
+        temperature=0.0,
+        top_p=0.2,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": query_prompt},
@@ -179,4 +183,4 @@ def db_config_pipeline(db_type: str, db_config: dict, query: str) -> str:
 
     logger.debug(f"Refined query result: {refined_query_result}")
 
-    return refined_query_result
+    return refined_query_result, sql_query

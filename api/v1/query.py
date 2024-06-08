@@ -37,7 +37,7 @@ async def query(query_type: str,
                 message="CSV file not found"
             )
         
-        if csv_file.customer_uuid != current_user.uuid:
+        if str(csv_file.customer_uuid) != current_user.uuid:
             logger.error("Unauthorized access")
             return APIResponseBase.unauthorized(
                 message="Unauthorized access"
@@ -55,13 +55,13 @@ async def query(query_type: str,
                 message="DB not found"
             )
         
-        if db_config.customer_uuid != current_user.uuid:
+        if str(db_config.customer_uuid) != current_user.uuid:
             logger.error("Unauthorized access")
             return APIResponseBase.unauthorized(
                 message="Unauthorized access"
             )
 
-        response = db_config_pipeline(
+        response, sql_query = db_config_pipeline(
             db_config.db_type,
             db_config.db_config, request.query
         )
@@ -78,6 +78,7 @@ async def query(query_type: str,
             "query": request.query,
             "db_id": request.db_id,
             "csv_file_id": request.csv_file_id,
-            "response": response
+            "response": response,
+            "sql_query": sql_query
         }
     )
