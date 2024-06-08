@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from data_response.base_response import APIResponseBase
 from helper.auth import AccessTokenData, get_current_user
-from schemas.query import CustomerQueryRequest
+from schemas.query import CustomerQueryRequest, CustomerQueryResponse
 from db.queries.db_config import DBConfigQuery
 from db.queries.user_documents import UserDocumentQuery
 from db import get_db
@@ -81,11 +81,11 @@ async def query(query_type: str,
 
     return APIResponseBase.success_response(
         message="Query successful",
-        data={
-            "query": request.query,
-            "db_id": request.db_id,
-            "csv_file_id": request.csv_file_id,
-            "response": response,
-            "sql_query": sql_query
-        }
+        data=CustomerQueryResponse(
+            query=request.query,
+            response=response,
+            sql_query=sql_query if query_type == "db" else None,
+            db_id=request.db_id if query_type == "db" else None,
+            csv_file_id=request.csv_file_id if query_type == "csv" else None
+        )
     )

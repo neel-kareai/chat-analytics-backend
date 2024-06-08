@@ -174,7 +174,11 @@ def db_config_pipeline(db_type: str, db_config: dict, query: str) -> str:
     engine = create_engine(db_url)
     with engine.connect() as conn:
         result = conn.execute(text(sql_query))
-        query_result = "\n".join([str(row) for row in result.fetchall()])
+        # check for empty result
+        if result.rowcount==0:
+            query_result = "No results found"
+        else:
+            query_result = "\n".join([str(row) for row in result.fetchall()])
 
     logger.debug(f"Query result: {query_result}")
     logger.debug("Refining query result")
