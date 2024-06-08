@@ -117,9 +117,8 @@ def db_refine_query_result(query: str, query_result: str) -> str:
     """
 
     system_prompt = f"""
-    You are a data analyst and database expert. You have been given a task to
-    see the user query and query result and refine the query result to make it more
-    presentable to the user.
+    You are a data analyst and database expert bot. You have been given a task to
+    see the user query and query result and convert it into a more readable format.
 """
 
     query_prompt = f"""
@@ -127,8 +126,8 @@ def db_refine_query_result(query: str, query_result: str) -> str:
     {query}
     The query result is as follows:
     {query_result}
-    Refine the query result to make it more presentable.
-    Refined Response:
+    Combine the result for more readability.
+    response:
 """
 
     openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
