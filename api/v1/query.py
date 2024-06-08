@@ -3,10 +3,12 @@ from data_response.base_response import APIResponseBase
 from helper.auth import AccessTokenData, get_current_user
 from schemas.query import CustomerQueryRequest
 from db.queries.db_config import DBConfigQuery
+from db.queries.user_documents import UserDocumentQuery
 from db import get_db
 from sqlalchemy.orm import Session
 from logger import logger
 from helper.db_query import db_config_pipeline
+from helper.csv_query import csv_pipeline
 
 
 router = APIRouter(prefix="/query", tags=["query"])
@@ -27,6 +29,22 @@ async def query(query_type: str,
     if query_type == "csv":
         logger.debug(f"Received query for CSV")
 
+        csv_file = UserDocumentQuery.get_user_document_by_id(
+            db, request.csv_file_id)
+        if not csv_file:
+            logger.error("CSV file not found")
+            return APIResponseBase.bad_request(
+                message="CSV file not found"
+            )
+        
+        if csv_file.customer_uuid != current_user.uuid:
+            logger.error("Unauthorized access")
+            return APIResponseBase.unauthorized(
+                message="Unauthorized access"
+            )
+
+        response = csv_pipeline(csv_file.embed_url, request.query)
+
     elif query_type == "db":
         logger.debug(f"Received query for DB")
 
@@ -37,6 +55,12 @@ async def query(query_type: str,
                 message="DB not found"
             )
         
+        if db_config.customer_uuid != current_user.uuid:
+            logger.error("Unauthorized access")
+            return APIResponseBase.unauthorized(
+                message="Unauthorized access"
+            )
+
         response = db_config_pipeline(
             db_config.db_type,
             db_config.db_config, request.query
