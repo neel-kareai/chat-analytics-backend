@@ -21,7 +21,7 @@ async def query(query_type: str,
                 db: Session = Depends(get_db)
                 ) -> APIResponseBase:
     """
-        Query the database
+        Query the database or csv file
     """
 
     response = None
