@@ -36,6 +36,7 @@ class UserDocumentQuery:
     def update_embedding_path(db:Session, user_document_id:int, embedding_path:str):
         user_document = db.query(UserDocument).filter(UserDocument.id == user_document_id).first()
         user_document.embed_url = embedding_path
+        user_document.is_embedded = True
         db.flush()
         return user_document
         

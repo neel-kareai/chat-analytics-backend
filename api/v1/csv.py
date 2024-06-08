@@ -17,11 +17,13 @@ router = APIRouter(prefix="/csv", tags=["csv"])
 
 def process_embedding(db: Session, csv_doc: UserDocument) -> bool:
     try:
+        logger.debug(f"Creating Embedding for doc id {csv_doc.id}")
         embedding_path = create_document_embedding(
             document_path=csv_doc.document_url, customer_uuid=csv_doc.customer_uuid
         )
         UserDocumentQuery.update_embedding_path(db, csv_doc.id, embedding_path)
         db.commit()
+        logger.debug(f"Embedding created for doc id {csv_doc.id}")
         return True
     except Exception as e:
         logger.error(f"Failed to create document embedding: {e}")
