@@ -70,5 +70,8 @@ async def get_db_config(response: Response,
     response.status_code = status.HTTP_200_OK
     return APIResponseBase.success_response(
         message="DB config found",
-        data=[db_config.to_dict() for db_config in db_configs]
+        data={
+            "db_configs": [db_config.to_dict() for db_config in db_configs],
+            "customer_uuid": current_user.uuid
+        },
     )

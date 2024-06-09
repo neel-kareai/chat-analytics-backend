@@ -19,9 +19,7 @@ class DBConfig(Base):
     def to_dict(self):
         return {
             "id": self.id,
-            "customer_uuid": self.customer_uuid,
             "db_type": self.db_type,
-            "db_config": self.db_config,
             "created_at": self.created_at,
             "updated_at": self.updated_at
         }

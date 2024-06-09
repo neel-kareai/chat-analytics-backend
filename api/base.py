@@ -8,6 +8,7 @@ from api.v1 import db_operation
 from api.v1 import csv
 from api.v1 import query
 from api.v1 import llm_models
+from api.v1 import datasource
 from api.v2 import query as query_v2
 
 router = APIRouter()
@@ -17,6 +18,7 @@ router.include_router(db_operation.router, prefix="/v1")
 router.include_router(csv.router, prefix="/v1")
 router.include_router(query.router, prefix="/v1")
 router.include_router(llm_models.router, prefix="/v1")
+router.include_router(datasource.router, prefix="/v1")
 router.include_router(query_v2.router, prefix="/v2")
 
 @router.get("/health")
