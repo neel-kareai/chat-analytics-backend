@@ -16,6 +16,7 @@ from llama_index.core.query_pipeline import (
 from llama_index.experimental.query_engine.pandas import PandasInstructionParser
 from llama_index.core import PromptTemplate
 from datetime import datetime
+import time
 
 
 def csv_pipeline(embedding_path: str, customer_query: str) -> str:
@@ -137,11 +138,22 @@ def csv_pipeline_v2(
     qp.add_link("response_synthesis_prompt", "llm2")
 
     logger.debug("Running the Query Pipeline...")
-    result = qp.run(
-        query_str=customer_query,
+    max_retry = 3
+    while max_retry > 0:
+        try:
+            result = qp.run(
+                query_str=customer_query,
+            )
+            response = result.message.content
+            logger.debug(f"Query Pipeline response: {response}")
+            return response
+        except Exception as e:
+            logger.error(f"Failed to run query pipeline: {e}")
+            logger.info("Retrying in 5 seconds...")
+            time.sleep(5)
+            max_retry -= 1
+
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Failed to run query pipeline",
     )
-
-    response = result.message.content
-    logger.debug(f"Query Pipeline response: {response}")
-
-    return response

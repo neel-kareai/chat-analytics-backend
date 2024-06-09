@@ -5,6 +5,7 @@ from openai import OpenAI
 from config import Config
 from logger import logger
 import re
+from helper.openai import openai_chat_completion_with_retry
 
 
 def get_db_connection_string(
@@ -111,19 +112,26 @@ def generate_sql_query(query: str, db_schema: str, model: str) -> str:
     SQL query:
 """
 
-    openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
+    # openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
 
-    response = openai_client.chat.completions.create(
+    # response = openai_client.chat.completions.create(
+    #     model=model,
+    #     temperature=0.0,
+    #     top_p=0.2,
+    #     messages=[
+    #         {"role": "system", "content": system_prompt},
+    #         {"role": "user", "content": query_prompt},
+    #     ],
+    # )
+
+    # response_text = response.choices[0].message.content
+    response_text = openai_chat_completion_with_retry(
+        system_prompt=system_prompt,
+        user_prompt=query_prompt,
         model=model,
         temperature=0.0,
         top_p=0.2,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query_prompt},
-        ],
     )
-
-    response_text = response.choices[0].message.content
     logger.debug(f"OpenAI response: {response_text}")
 
     # assuming we have received sql in ```sql``` format
@@ -169,19 +177,26 @@ def db_refine_query_result(query: str, query_result: str, model: str) -> str:
     response:
 """
 
-    openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
+    # openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
 
-    response = openai_client.chat.completions.create(
+    # response = openai_client.chat.completions.create(
+    #     model=model,
+    #     temperature=0.0,
+    #     top_p=0.2,
+    #     messages=[
+    #         {"role": "system", "content": system_prompt},
+    #         {"role": "user", "content": query_prompt},
+    #     ],
+    # )
+
+    # response_text = response.choices[0].message.content
+    response_text = openai_chat_completion_with_retry(
+        system_prompt=system_prompt,
+        user_prompt=query_prompt,
         model=model,
         temperature=0.0,
         top_p=0.2,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query_prompt},
-        ],
     )
-
-    response_text = response.choices[0].message.content
     logger.debug(f"OpenAI response: {response_text}")
 
     return response_text

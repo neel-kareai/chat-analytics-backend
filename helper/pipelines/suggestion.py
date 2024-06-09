@@ -9,7 +9,7 @@ from typing import List, Any
 from helper.pipelines.db_query import get_db_schema, get_db_connection_string
 import pandas as pd
 import re, json
-
+from helper.openai import openai_chat_completion_with_retry
 
 def get_csv_schema(data_source: UserDocument) -> str:
     """
@@ -70,7 +70,7 @@ def suggestion_pipeline(
         List[str]: A list of suggested queries.
 
     """
-    openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
+    # openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
 
     output_format = """
     You should output a JSON object with a key "suggestions" which should contain
@@ -156,15 +156,20 @@ def suggestion_pipeline(
             {output_format}
             """
 
-    response = openai_client.chat.completions.create(
-        model=Config.DEFAULT_OPENAI_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
+    # response = openai_client.chat.completions.create(
+    #     model=Config.DEFAULT_OPENAI_MODEL,
+    #     messages=[
+    #         {"role": "system", "content": system_prompt},
+    #         {"role": "user", "content": user_prompt},
+    #     ],
+    # )
 
-    response_text = response.choices[0].message.content
+    # response_text = response.choices[0].message.content
+    response_text = openai_chat_completion_with_retry(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        model=Config.DEFAULT_OPENAI_MODEL,
+    )
     logger.debug(f"OpenAI response: {response_text}")
     suggestions = extract_json(response_text)
     try:
