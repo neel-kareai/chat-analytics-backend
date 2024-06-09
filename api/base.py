@@ -24,9 +24,19 @@ router.include_router(query_suggestions.router, prefix="/v1")
 router.include_router(query_v2.router, prefix="/v2")
 
 @router.get("/health")
-async def get_system_health(response:Response) -> APIResponseBase:
+async def get_system_health(response: Response) -> APIResponseBase:
     """
-        Check the health of the system
+    Get the system health status.
+
+    This function checks the system health and returns an APIResponseBase object
+    with the system health status.
+
+    Args:
+        response (Response): The response object to be modified.
+
+    Returns:
+        APIResponseBase: An APIResponseBase object with the system health status.
+
     """
     logger.info("Checking system health")
     # health logic will be added later here

@@ -24,12 +24,22 @@ async def query(
     db: Session = Depends(get_db),
 ) -> APIResponseBase:
     """
-    Query the database or csv file
-    """
+    Executes a query based on the provided query type.
 
+    Args:
+        query_type (str): The type of query to execute. Can be "csv" or "db".
+        request (CustomerQueryRequest): The request object containing the query details.
+        response (Response): The response object to be returned.
+        current_user (AccessTokenData, optional): The current user's access token data. Defaults to Depends(get_current_user).
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+
+    Returns:
+        APIResponseBase: The API response containing the query result.
+    """
     logger.debug(f"Using LLM : {request.model}")
 
     result = None
+    sql_query = None
 
     if query_type == "csv":
         logger.debug(f"Received query for CSV")
@@ -104,7 +114,15 @@ def chat(
     current_user: AccessTokenData = Depends(get_current_user),
 ) -> APIResponseBase:
     """
-    Chat with the system
+    Process a chat request and generate a response.
+
+    Args:
+        request (CustomerQueryRequest): The customer query request object.
+        response (Response): The response object.
+        current_user (AccessTokenData, optional): The current user access token data. Defaults to Depends(get_current_user).
+
+    Returns:
+        APIResponseBase: The API response containing the chat result.
     """
     logger.debug(f"Received chat request")
     result = simple_chat_pipeline(request.query, request.model)
@@ -113,6 +131,7 @@ def chat(
     return APIResponseBase.success_response(
         message="Chat successful",
         data=CustomerQueryResponse(
-            query=request.query, response=result,
+            query=request.query,
+            response=result,
         ),
     )

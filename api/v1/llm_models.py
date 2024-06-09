@@ -9,7 +9,13 @@ router = APIRouter(prefix="/llm_models", tags=["llm_models"])
 @router.get("/")
 async def get_llm_models(response: Response) -> APIResponseBase:
     """
-    Get all LLM models
+    Retrieves the list of LLM models.
+
+    Args:
+        response (Response): The response object.
+
+    Returns:
+        APIResponseBase: The API response containing the list of LLM models.
     """
     llm_models = ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo-0125"]
     response.status_code = status.HTTP_200_OK

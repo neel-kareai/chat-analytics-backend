@@ -21,8 +21,21 @@ def get_suggestion_based_on_query(
     current_user: AccessTokenData = Depends(get_current_user),
 ) -> APIResponseBase:
     """
-    Get suggestions for a given query
+    Retrieves suggestions based on the given query.
+
+    Args:
+        request (AISuggestionRequest): The request object containing the query details.
+        response (Response): The response object to be returned.
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+        current_user (AccessTokenData, optional): The current user's access token data. Defaults to Depends(get_current_user).
+
+    Returns:
+        APIResponseBase: The API response containing the suggestions.
+
+    Raises:
+        HTTPException: If the data source is not found or if the user is forbidden to access the data source.
     """
+
     data_source = None
     if request.query_type == "db":
         data_source = DBConfigQuery.get_db_config_by_id(db, request.data_source_id)

@@ -16,7 +16,15 @@ async def get_datasources(
     db=Depends(get_db),
 ) -> APIResponseBase:
     """
-    Get all datasources
+    Retrieve the datasources for the current user.
+
+    Args:
+        response (Response): The response object.
+        current_user (AccessTokenData): The access token data for the current user.
+        db: The database dependency.
+
+    Returns:
+        APIResponseBase: The API response containing the fetched datasources.
     """
 
     db_configs = DBConfigQuery.get_db_config_by_customer_uuid(db, current_user.uuid)

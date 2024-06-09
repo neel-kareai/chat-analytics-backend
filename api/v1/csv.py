@@ -1,4 +1,12 @@
-from fastapi import APIRouter, status, Depends, Header, UploadFile, BackgroundTasks, Response
+from fastapi import (
+    APIRouter,
+    status,
+    Depends,
+    Header,
+    UploadFile,
+    BackgroundTasks,
+    Response,
+)
 from data_response.base_response import APIResponseBase
 from helper.auth import get_current_user, AccessTokenData
 from logger import logger
@@ -15,8 +23,17 @@ from helper.openai import create_document_embedding
 router = APIRouter(prefix="/csv", tags=["csv"])
 
 
-
 def process_embedding(db: Session, csv_doc: UserDocument) -> bool:
+    """
+    Process the embedding for a given CSV document.
+
+    Args:
+        db (Session): The database session.
+        csv_doc (UserDocument): The CSV document to process.
+
+    Returns:
+        bool: True if the embedding was successfully created, False otherwise.
+    """
     try:
         logger.debug(f"Creating Embedding for doc id {csv_doc.id}")
         embedding_path = create_document_embedding(
@@ -40,7 +57,17 @@ async def upload_csv(
     db: Session = Depends(get_db),
 ) -> APIResponseBase:
     """
-    Upload a CSV file
+    Uploads a CSV file and processes it.
+
+    Args:
+        file (UploadFile): The CSV file to upload.
+        background_tasks (BackgroundTasks): Background tasks to be executed.
+        response (Response): The HTTP response object.
+        current_user (AccessTokenData, optional): The current user's access token data. Defaults to Depends(get_current_user).
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+
+    Returns:
+        APIResponseBase: The API response containing the status and data.
     """
 
     logger.debug(f"Request: {file.filename}")

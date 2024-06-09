@@ -21,7 +21,15 @@ async def register_customer(
     request: CustomerRegisterRequest, response: Response, db: Session = Depends(get_db)
 ) -> APIResponseBase:
     """
-    Register a new customer
+    Register a new customer.
+
+    Args:
+        request (CustomerRegisterRequest): The request object containing customer details.
+        response (Response): The response object to be sent back to the client.
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+
+    Returns:
+        APIResponseBase: The API response containing the result of the registration process.
     """
 
     customer = CustomerQuery.get_customer_by_email(db, request.email)
@@ -56,7 +64,15 @@ async def login_customer(
     request: CustomerLoginRequest, response: Response, db: Session = Depends(get_db)
 ) -> APIResponseBase:
     """
-    Login a customer
+    Logs in a customer with the provided email and password.
+
+    Args:
+        request (CustomerLoginRequest): The login request object containing the email and password.
+        response (Response): The response object to be returned.
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+
+    Returns:
+        APIResponseBase: The API response containing the access and refresh tokens.
     """
 
     customer = CustomerQuery.get_customer_by_email_password(
@@ -97,7 +113,18 @@ async def refresh_access_token(
     response: Response, authorization: str = Header(None), db: Session = Depends(get_db)
 ) -> APIResponseBase:
     """
-    Refresh access token
+    Refreshes the access token for a customer.
+
+    Args:
+        response (Response): The HTTP response object.
+        authorization (str, optional): The authorization header containing the refresh token. Defaults to None.
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+
+    Returns:
+        APIResponseBase: The API response containing the new access token.
+
+    Raises:
+        HTTPException: If the authorization header is missing or invalid, or if the customer is not found.
     """
 
     if not authorization:

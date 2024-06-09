@@ -14,15 +14,25 @@ router = APIRouter(prefix="/db-operation", tags=["db_operation"])
 
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
-async def create_new_db(request: NewDBCreateRequest,
-                        response: Response,
-                        db: Session = Depends(get_db),
-                        current_user: AccessTokenData = Depends(
-                            get_current_user)
-                        ) -> APIResponseBase:
+async def create_new_db(
+    request: NewDBCreateRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: AccessTokenData = Depends(get_current_user),
+) -> APIResponseBase:
     """
-        Create a new database config
+    Create a new database configuration.
+
+    Args:
+        request (NewDBCreateRequest): The request object containing the details of the new database configuration.
+        response (Response): The response object to be returned.
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+        current_user (AccessTokenData, optional): The current user. Defaults to Depends(get_current_user).
+
+    Returns:
+        APIResponseBase: The API response containing the result of the operation.
     """
+
     logger.debug(f"Request: {request}")
     db_config = DBConfigQuery.create_db_config(
         db, current_user.uuid, request.db_type, request.db_config
@@ -41,37 +51,44 @@ async def create_new_db(request: NewDBCreateRequest,
     return APIResponseBase.created(
         message="DB config created successfully",
         data=NewDBCreateResponse(
-            db_config_id=db_config.id,
-            message="DB config created successfully"
-        )
+            db_config_id=db_config.id, message="DB config created successfully"
+        ),
     )
 
 
 @router.get("/")
-async def get_db_config(response: Response,
+async def get_db_config(
+    response: Response,
     db: Session = Depends(get_db),
-                        current_user: AccessTokenData = Depends(
-                            get_current_user)
-                        ) -> APIResponseBase:
+    current_user: AccessTokenData = Depends(get_current_user),
+) -> APIResponseBase:
     """
-        Get database config
+    Retrieves the database configuration for the current user.
+
+    Args:
+        response (Response): The response object.
+        db (Session): The database session.
+        current_user (AccessTokenData): The access token data for the current user.
+
+    Returns:
+        APIResponseBase: The API response containing the database configuration.
+
+    Raises:
+        HTTPException: If the database configuration is not found.
     """
 
-    db_configs = DBConfigQuery.get_db_config_by_customer_uuid(
-        db, current_user.uuid)
+    db_configs = DBConfigQuery.get_db_config_by_customer_uuid(db, current_user.uuid)
 
     if not db_configs:
         logger.error("DB config not found")
         response.status_code = status.HTTP_404_NOT_FOUND
-        return APIResponseBase.not_found(
-            message="DB config not found"
-        )
-    
+        return APIResponseBase.not_found(message="DB config not found")
+
     response.status_code = status.HTTP_200_OK
     return APIResponseBase.success_response(
         message="DB config found",
         data={
             "db_configs": [db_config.to_dict() for db_config in db_configs],
-            "customer_uuid": current_user.uuid
+            "customer_uuid": current_user.uuid,
         },
     )

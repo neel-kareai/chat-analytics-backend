@@ -20,10 +20,23 @@ async def query(query_type: str,
                 db: Session = Depends(get_db)
                 ) -> APIResponseBase:
     """
-        Query the database or csv file using
-        Llama's Query Pipeline module without any need of
-        embeddings
+    Executes a query based on the given query type and returns the API response.
+
+    Parameters:
+    - query_type (str): The type of query to execute.
+    - request (CustomerQueryRequest): The request object containing query details.
+    - response (Response): The response object to be returned.
+    - current_user (AccessTokenData, optional): The current user's access token data. Defaults to Depends(get_current_user).
+    - db (Session, optional): The database session. Defaults to Depends(get_db).
+
+    Returns:
+    - APIResponseBase: The API response containing the query result.
+
+    Raises:
+    - BadRequestException: If the query type is invalid.
+    - UnauthorizedException: If the user does not have access to the CSV file.
     """
+    
     logger.debug(f"Using LLM : {request.model}")
     result = None
 
