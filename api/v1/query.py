@@ -7,22 +7,24 @@ from db.queries.user_documents import UserDocumentQuery
 from db import get_db
 from sqlalchemy.orm import Session
 from logger import logger
-from helper.db_query import db_config_pipeline
-from helper.csv_query import csv_pipeline
+from helper.pipelines.db_query import db_config_pipeline
+from helper.pipelines.csv_query import csv_pipeline
+from helper.pipelines.simple_chat import simple_chat_pipeline
 
 
 router = APIRouter(prefix="/query", tags=["query"])
 
 
 @router.post("/{query_type}")
-async def query(query_type: str,
-                request: CustomerQueryRequest,
-                response: Response,
-                current_user: AccessTokenData = Depends(get_current_user),
-                db: Session = Depends(get_db)
-                ) -> APIResponseBase:
+async def query(
+    query_type: str,
+    request: CustomerQueryRequest,
+    response: Response,
+    current_user: AccessTokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> APIResponseBase:
     """
-        Query the database or csv file
+    Query the database or csv file
     """
 
     logger.debug(f"Using LLM : {request.model}")
@@ -44,13 +46,13 @@ async def query(query_type: str,
         #     return APIResponseBase.bad_request(
         #         message="CSV file not found"
         #     )
-        
+
         # if str(csv_file.customer_uuid) != current_user.uuid:
         #     logger.error("Unauthorized access")
         #     return APIResponseBase.unauthorized(
         #         message="Unauthorized access"
         #     )
-        
+
         # # check if the document is embedded or not
         # if csv_file.is_embedded is None or csv_file.is_embedded is False:
         #     logger.debug("Embedding is still in progress")
@@ -66,31 +68,23 @@ async def query(query_type: str,
         db_config = DBConfigQuery.get_db_config_by_id(db, request.data_source_id)
         if not db_config:
             logger.error("DB not found")
-            return APIResponseBase.bad_request(
-                message="DB not found"
-            )
-        
+            return APIResponseBase.bad_request(message="DB not found")
+
         if str(db_config.customer_uuid) != current_user.uuid:
             logger.error("Unauthorized access")
-            return APIResponseBase.unauthorized(
-                message="Unauthorized access"
-            )
+            return APIResponseBase.unauthorized(message="Unauthorized access")
         try:
             result, sql_query = db_config_pipeline(
-                db_config.db_type,
-                db_config.db_config, request.query, request.model
+                db_config.db_type, db_config.db_config, request.query, request.model
             )
         except Exception as e:
             logger.error(f"Failed to query db: {e}")
             return APIResponseBase.internal_server_error(
                 message="Failed to query db. Please check your query and try again."
             )
-
     else:
         logger.error("Invalid query type")
-        return APIResponseBase.bad_request(
-            message="Invalid query type"
-        )
+        return APIResponseBase.bad_request(message="Invalid query type")
 
     return APIResponseBase.success_response(
         message="Query successful",
@@ -98,6 +92,27 @@ async def query(query_type: str,
             query=request.query,
             response=result,
             sql_query=sql_query if query_type == "db" else None,
-            data_source_id=request.data_source_id
-        )
+            data_source_id=request.data_source_id,
+        ),
+    )
+
+
+@router.post("/")
+def chat(
+    request: CustomerQueryRequest,
+    response: Response,
+    current_user: AccessTokenData = Depends(get_current_user),
+) -> APIResponseBase:
+    """
+    Chat with the system
+    """
+    logger.debug(f"Received chat request")
+    result = simple_chat_pipeline(request.query, request.model)
+
+    response.status_code = status.HTTP_200_OK
+    return APIResponseBase.success_response(
+        message="Chat successful",
+        data=CustomerQueryResponse(
+            query=request.query, response=result,
+        ),
     )

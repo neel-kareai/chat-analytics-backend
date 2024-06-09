@@ -6,7 +6,7 @@ from db.queries.user_documents import UserDocumentQuery
 from db import get_db
 from sqlalchemy.orm import Session
 from logger import logger
-from helper.csv_query import csv_pipeline_v2
+from helper.pipelines.csv_query import csv_pipeline_v2
 
 
 router = APIRouter(prefix="/query", tags=["query"])
