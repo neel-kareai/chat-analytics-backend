@@ -15,6 +15,7 @@ from helper.openai import create_document_embedding
 router = APIRouter(prefix="/csv", tags=["csv"])
 
 
+
 def process_embedding(db: Session, csv_doc: UserDocument) -> bool:
     try:
         logger.debug(f"Creating Embedding for doc id {csv_doc.id}")
