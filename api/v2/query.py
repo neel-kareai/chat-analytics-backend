@@ -24,14 +24,14 @@ async def query(query_type: str,
         Llama's Query Pipeline module without any need of
         embeddings
     """
-
+    logger.debug(f"Using LLM : {request.model}")
     result = None
 
     if query_type == "csv":
         logger.debug(f"Received query for CSV")
 
         csv_file = UserDocumentQuery.get_user_document_by_id(
-            db, request.csv_file_id)
+            db, request.data_source_id)
         if not csv_file:
             logger.error("CSV file not found")
             return APIResponseBase.bad_request(
@@ -61,8 +61,6 @@ async def query(query_type: str,
         data=CustomerQueryResponse(
             query=request.query,
             response=result,
-            # sql_query=sql_query if query_type == "db" else None,
-            # db_id=request.db_id if query_type == "db" else None,
-            csv_file_id=request.csv_file_id if query_type == "csv" else None
+            data_source_id=request.data_source_id if query_type == "csv" else None
         )
     )

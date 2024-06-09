@@ -25,6 +25,8 @@ async def query(query_type: str,
         Query the database or csv file
     """
 
+    logger.debug(f"Using LLM : {request.model}")
+
     result = None
 
     if query_type == "csv":
@@ -61,7 +63,7 @@ async def query(query_type: str,
     elif query_type == "db":
         logger.debug(f"Received query for DB")
 
-        db_config = DBConfigQuery.get_db_config_by_id(db, request.db_id)
+        db_config = DBConfigQuery.get_db_config_by_id(db, request.data_source_id)
         if not db_config:
             logger.error("DB not found")
             return APIResponseBase.bad_request(
@@ -76,7 +78,7 @@ async def query(query_type: str,
         try:
             result, sql_query = db_config_pipeline(
                 db_config.db_type,
-                db_config.db_config, request.query
+                db_config.db_config, request.query, request.model
             )
         except Exception as e:
             logger.error(f"Failed to query db: {e}")
@@ -96,7 +98,6 @@ async def query(query_type: str,
             query=request.query,
             response=result,
             sql_query=sql_query if query_type == "db" else None,
-            db_id=request.db_id if query_type == "db" else None,
-            csv_file_id=request.csv_file_id if query_type == "csv" else None
+            data_source_id=request.data_source_id
         )
     )

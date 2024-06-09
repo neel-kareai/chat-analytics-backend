@@ -60,7 +60,7 @@ def get_db_schema(db_url: str
     return db_schema
 
 
-def generate_sql_query(query: str, db_schema: str) -> str:
+def generate_sql_query(query: str, db_schema: str, model:str) -> str:
     """
         Process the customer query
     """
@@ -83,7 +83,7 @@ def generate_sql_query(query: str, db_schema: str) -> str:
     openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
 
     response = openai_client.chat.completions.create(
-        model=Config.DEFAULT_OPENAI_MODEL,
+        model=model,
         temperature=0.0,
         top_p=0.2,
         messages=[
@@ -111,7 +111,7 @@ def generate_sql_query(query: str, db_schema: str) -> str:
     return sql_query
 
 
-def db_refine_query_result(query: str, query_result: str) -> str:
+def db_refine_query_result(query: str, query_result: str, model:str) -> str:
     """
         Refine the query result using OpenAI
     """
@@ -133,7 +133,7 @@ def db_refine_query_result(query: str, query_result: str) -> str:
     openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
 
     response = openai_client.chat.completions.create(
-        model=Config.DEFAULT_OPENAI_MODEL,
+        model=model,
         temperature=0.0,
         top_p=0.2,
         messages=[
@@ -148,7 +148,7 @@ def db_refine_query_result(query: str, query_result: str) -> str:
     return response_text
 
 
-def db_config_pipeline(db_type: str, db_config: dict, query: str) -> str:
+def db_config_pipeline(db_type: str, db_config: dict, query: str, model:str = Config.DEFAULT_OPENAI_MODEL) -> str:
     """
         Pipeline to process the customer query
     """
@@ -166,7 +166,7 @@ def db_config_pipeline(db_type: str, db_config: dict, query: str) -> str:
     db_schema = get_db_schema(db_url)
 
     logger.debug("Processing customer query")
-    sql_query = generate_sql_query(query, db_schema)
+    sql_query = generate_sql_query(query, db_schema, model)
     logger.debug(f"Generated SQL query: {sql_query}")
 
     logger.debug("Executing SQL query")
@@ -182,7 +182,7 @@ def db_config_pipeline(db_type: str, db_config: dict, query: str) -> str:
     logger.debug(f"Query result: {query_result}")
     logger.debug("Refining query result")
 
-    refined_query_result = db_refine_query_result(query, query_result)
+    refined_query_result = db_refine_query_result(query, query_result, model)
 
     logger.debug(f"Refined query result: {refined_query_result}")
 

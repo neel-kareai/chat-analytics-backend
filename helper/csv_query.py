@@ -49,7 +49,7 @@ def csv_pipeline(embedding_path: str, customer_query: str) -> str:
     return str(response)
 
 
-def csv_pipeline_v2(csv_path: str, customer_query: str) -> str:
+def csv_pipeline_v2(csv_path: str, customer_query: str, model:str = Config.DEFAULT_OPENAI_MODEL) -> str:
     """
     Query the csv file using the query pipeline
     """
@@ -89,7 +89,7 @@ def csv_pipeline_v2(csv_path: str, customer_query: str) -> str:
     )
     pandas_output_parser = PandasInstructionParser(df)
     response_synthesis_prompt = PromptTemplate(response_synthesis_prompt_str)
-    llm = OpenAI(model=Config.DEFAULT_OPENAI_MODEL)
+    llm = OpenAI(model=model)
 
     qp = QP(
         modules={
