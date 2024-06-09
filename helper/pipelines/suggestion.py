@@ -1,0 +1,158 @@
+from fastapi import HTTPException, status
+from openai import OpenAI
+from config import Config
+from logger import logger
+from schemas.ai_suggestion import AISuggestionRequest
+from db.models.db_config import DBConfig
+from db.models.user_document import UserDocument
+from typing import List, Any
+from helper.pipelines.db_query import get_db_schema, get_db_connection_string
+import pandas as pd
+import re, json
+
+
+def get_csv_schema(data_source: UserDocument) -> str:
+    """
+    returns the head of the csv file
+    """
+    df = pd.read_csv(data_source.document_url)
+    csv_schema = f"""
+    The schema of the csv file is as follows:
+    {df.head()}
+    """
+
+    return csv_schema
+
+
+def extract_json(text: str) -> dict | Any:
+    """
+    Extract the JSON from the text
+    """
+    # assuming we have received json in ```json``` format
+    json_text = re.search(r"```json(.*)```", text, re.DOTALL)
+    if json_text:
+        return json_text.group(1)
+
+    # assuming we have received json in ``` ``` format
+    json_text = re.search(r"```(.*)```", text, re.DOTALL)
+    if json_text:
+        return json_text.group(1)
+
+    # assuming we have received json in plain text format
+    json_text = text
+
+
+def suggestion_pipeline(
+    request: AISuggestionRequest, data_source: UserDocument | DBConfig
+) -> List[str]:
+    """
+    Give 3-5 suggestions for a given query and data source
+    """
+    openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
+
+    output_format = """
+    You should output a JSON object with a key "suggestions" which should contain
+    a list of strings. Each string should be a suggested query which the user
+    might be interested in. The format is as follows:
+    {
+        "suggestions": ["suggested query 1", "suggested query 2", "suggested query 3"]
+    }
+
+    Please make sure to output only JSON by enclosing it within 3 backticks.
+    """
+
+    if request.data_source_id is None:
+        # Check if its the first question
+        if request.is_first_request:
+            logger.debug("Case 1: First request with no data source or last question")
+            system_prompt = f"""
+            You are an helpful assistance with data analyst and database expertise. Your job is to
+            to suggest 3-4 easy question that the user might be interested in or might query
+            """
+            user_prompt = f"""
+            Suggest some general question that user can ask. Please note that the
+            user has not asked any question yet and might be interested in general question
+            related to data science, analytics or database.
+            {output_format}
+            """
+        else:
+            logger.debug("Case 2: First request with last question but no data source")
+            system_prompt = f"""
+            You are an assistance with data analyst and database expertise. Your job is
+            to suggest 3-4 follow-up questions that the user might be interested in based on the
+            last query of the user
+            """
+
+            user_prompt = f"""
+            The last query of the user was:
+            {request.last_ques}
+            Suggest some queries that the user might be interested in.
+            {output_format}
+            """
+    else:
+        last_ques_str = (
+            f"The last query of the user was: {request.last_ques}"
+            if request.last_ques
+            else "This is the first query of the user"
+        )
+        if isinstance(data_source, UserDocument):
+            logger.debug("Case 3: Data source is a csv file")
+            system_prompt = f"""
+            You are an assistance with data analyst and database expertise. Your job is
+            to suggest 3-4 follow-up question that the user might be interested in based on the
+            csv file and user's last query.
+            """
+            user_prompt = f"""
+            The csv file has the following schema:
+            {get_csv_schema(data_source)}
+
+            {last_ques_str}
+            Suggest some follow-up question that the user might be interested in.
+            {output_format}
+            """
+        else:
+            logger.debug("Case 4: Data source is a database")
+            db_config = data_source.db_config
+            db_url = get_db_connection_string(
+                db_type=data_source.db_type,
+                db_user=db_config["user"],
+                db_password=db_config["password"],
+                db_host=db_config["hostname"],
+                db_port=db_config["port"],
+                db_name=db_config["dbname"],
+            )
+            system_prompt = f"""
+            You are an assistance with data analyst and database expertise. Your job is
+            to suggest 3-4 follow-up question that the user might be interested in based on the
+            database schema.
+            """
+            user_prompt = f"""
+            The database schema is as follows:
+            {get_db_schema(db_url)}
+            {last_ques_str}
+            Suggest some follow-up question that the user might be interested in.
+            {output_format}
+            """
+
+    response = openai_client.chat.completions.create(
+        model=Config.DEFAULT_OPENAI_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
+
+    response_text = response.choices[0].message.content
+    logger.debug(f"OpenAI response: {response_text}")
+    suggestions = extract_json(response_text)
+    try:
+        suggestions = json.loads(suggestions)
+    except json.JSONDecodeError:
+        logger.error(f"Could not decode the suggestions: {suggestions}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not decode the suggestions",
+        )
+    logger.debug(f"Suggestions: {suggestions['suggestions']}")
+
+    return suggestions["suggestions"]
