@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Response
 from data_response.base_response import APIResponseBase
 from helper.auth import AccessTokenData, get_current_user
 from schemas.query import CustomerQueryRequest, CustomerQueryResponse
@@ -17,6 +17,7 @@ router = APIRouter(prefix="/query", tags=["query"])
 @router.post("/{query_type}")
 async def query(query_type: str,
                 request: CustomerQueryRequest,
+                response: Response,
                 current_user: AccessTokenData = Depends(get_current_user),
                 db: Session = Depends(get_db)
                 ) -> APIResponseBase:
@@ -24,33 +25,38 @@ async def query(query_type: str,
         Query the database or csv file
     """
 
-    response = None
+    result = None
 
     if query_type == "csv":
         logger.debug(f"Received query for CSV")
 
-        csv_file = UserDocumentQuery.get_user_document_by_id(
-            db, request.csv_file_id)
-        if not csv_file:
-            logger.error("CSV file not found")
-            return APIResponseBase.bad_request(
-                message="CSV file not found"
-            )
+        # Depreciate this case
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return APIResponseBase.bad_request(
+            message="This API is deprecated. Please use v2 API"
+        )
+        # csv_file = UserDocumentQuery.get_user_document_by_id(
+        #     db, request.csv_file_id)
+        # if not csv_file:
+        #     logger.error("CSV file not found")
+        #     return APIResponseBase.bad_request(
+        #         message="CSV file not found"
+        #     )
         
-        if str(csv_file.customer_uuid) != current_user.uuid:
-            logger.error("Unauthorized access")
-            return APIResponseBase.unauthorized(
-                message="Unauthorized access"
-            )
+        # if str(csv_file.customer_uuid) != current_user.uuid:
+        #     logger.error("Unauthorized access")
+        #     return APIResponseBase.unauthorized(
+        #         message="Unauthorized access"
+        #     )
         
-        # check if the document is embedded or not
-        if csv_file.is_embedded is None or csv_file.is_embedded is False:
-            logger.debug("Embedding is still in progress")
-            return APIResponseBase.bad_request(
-                message="document is still being processed"
-            )
+        # # check if the document is embedded or not
+        # if csv_file.is_embedded is None or csv_file.is_embedded is False:
+        #     logger.debug("Embedding is still in progress")
+        #     return APIResponseBase.bad_request(
+        #         message="document is still being processed"
+        #     )
 
-        response = csv_pipeline(csv_file.embed_url, request.query)
+        # result = csv_pipeline(csv_file.embed_url, request.query)
 
     elif query_type == "db":
         logger.debug(f"Received query for DB")
@@ -68,7 +74,7 @@ async def query(query_type: str,
                 message="Unauthorized access"
             )
         try:
-            response, sql_query = db_config_pipeline(
+            result, sql_query = db_config_pipeline(
                 db_config.db_type,
                 db_config.db_config, request.query
             )
@@ -88,7 +94,7 @@ async def query(query_type: str,
         message="Query successful",
         data=CustomerQueryResponse(
             query=request.query,
-            response=response,
+            response=result,
             sql_query=sql_query if query_type == "db" else None,
             db_id=request.db_id if query_type == "db" else None,
             csv_file_id=request.csv_file_id if query_type == "csv" else None
