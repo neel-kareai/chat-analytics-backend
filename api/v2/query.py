@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Response
 from data_response.base_response import APIResponseBase
 from helper.auth import AccessTokenData, get_current_user
 from schemas.query import CustomerQueryRequest, CustomerQueryResponse
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/query", tags=["query"])
 @router.post("/{query_type}")
 async def query(query_type: str,
                 request: CustomerQueryRequest,
+                response: Response,
                 current_user: AccessTokenData = Depends(get_current_user),
                 db: Session = Depends(get_db)
                 ) -> APIResponseBase:
@@ -24,7 +25,7 @@ async def query(query_type: str,
         embeddings
     """
 
-    response = None
+    result = None
 
     if query_type == "csv":
         logger.debug(f"Received query for CSV")
@@ -44,16 +45,22 @@ async def query(query_type: str,
             )
         
 
-        response = csv_pipeline_v2(csv_file.document_url, request.query)
+        result = csv_pipeline_v2(csv_file.document_url, request.query)
 
-    elif query_type == "db":
-        raise NotImplementedError("Method not implemented")
+    else:
+        # bad request
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return APIResponseBase.bad_request(
+            message="Invalid query type"
+        )
 
+
+    response.status_code = status.HTTP_200_OK
     return APIResponseBase.success_response(
         message="Query successful",
         data=CustomerQueryResponse(
             query=request.query,
-            response=response,
+            response=result,
             # sql_query=sql_query if query_type == "db" else None,
             # db_id=request.db_id if query_type == "db" else None,
             csv_file_id=request.csv_file_id if query_type == "csv" else None

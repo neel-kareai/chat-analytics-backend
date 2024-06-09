@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status, Response
 from data_response.base_response import APIResponseBase
 from logger import logger
 
@@ -18,7 +18,7 @@ router.include_router(query.router, prefix="/v1")
 router.include_router(query_v2.router, prefix="/v2")
 
 @router.get("/health")
-async def get_system_health() -> APIResponseBase:
+async def get_system_health(response:Response) -> APIResponseBase:
     """
         Check the health of the system
     """
@@ -26,6 +26,7 @@ async def get_system_health() -> APIResponseBase:
     # health logic will be added later here
     logger.info("System is healthy")
 
+    response.status_code = status.HTTP_200_OK
     return APIResponseBase.success_response(
         message="System is healthy",
         data={"status": "UP"}

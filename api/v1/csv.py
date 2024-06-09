@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends, Header, UploadFile, BackgroundTasks
+from fastapi import APIRouter, status, Depends, Header, UploadFile, BackgroundTasks, Response
 from data_response.base_response import APIResponseBase
 from helper.auth import get_current_user, AccessTokenData
 from logger import logger
@@ -34,6 +34,7 @@ def process_embedding(db: Session, csv_doc: UserDocument) -> bool:
 async def upload_csv(
     file: UploadFile,
     background_tasks: BackgroundTasks,
+    response: Response,
     current_user: AccessTokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> APIResponseBase:
@@ -70,6 +71,7 @@ async def upload_csv(
     db.commit()
     background_tasks.add_task(process_embedding, db, new_csv_doc)
 
+    response.status_code = status.HTTP_201_CREATED
     return APIResponseBase.created(
         message="CSV file uploaded successfully",
         data=UserDocumentUploadResponse(

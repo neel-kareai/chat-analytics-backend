@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends, Header
+from fastapi import APIRouter, status, Depends, Header, Response
 from data_response.base_response import APIResponseBase
 from schemas.customer import (
     CustomerLoginRequest,
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/customer", tags=["customer"])
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_customer(
-    request: CustomerRegisterRequest, db: Session = Depends(get_db)
+    request: CustomerRegisterRequest, response: Response, db: Session = Depends(get_db)
 ) -> APIResponseBase:
     """
     Register a new customer
@@ -27,6 +27,7 @@ async def register_customer(
     customer = CustomerQuery.get_customer_by_email(db, request.email)
     if customer:
         logger.error("Customer with this email already exists")
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return APIResponseBase.bad_request(
             message="Customer with this email already exists"
         )
@@ -37,12 +38,14 @@ async def register_customer(
 
     if not customer:
         logger.error("Failed to create customer")
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return APIResponseBase.internal_server_error(
             message="Failed to create customer"
         )
 
     db.commit()
 
+    response.status_code = status.HTTP_201_CREATED
     return APIResponseBase.created(
         message="Customer created successfully",
     )
@@ -50,7 +53,7 @@ async def register_customer(
 
 @router.post("/login")
 async def login_customer(
-    request: CustomerLoginRequest, db: Session = Depends(get_db)
+    request: CustomerLoginRequest, response: Response, db: Session = Depends(get_db)
 ) -> APIResponseBase:
     """
     Login a customer
@@ -62,6 +65,7 @@ async def login_customer(
 
     if not customer:
         logger.error("Invalid email or password")
+        response.status_code = status.HTTP_401_UNAUTHORIZED
         return APIResponseBase.unauthorized(message="Invalid email or password")
 
     access_token_data = {
@@ -79,6 +83,7 @@ async def login_customer(
     # update last login
     CustomerQuery.update_customer_last_login(db, customer)
 
+    response.status_code = status.HTTP_200_OK
     return APIResponseBase.success_response(
         data=CustomerLoginResponse(
             access_token=access_token, refresh_token=refresh_token
@@ -89,7 +94,7 @@ async def login_customer(
 
 @router.post("/refresh-token")
 async def refresh_access_token(
-    authorization: str = Header(None), db: Session = Depends(get_db)
+    response: Response, authorization: str = Header(None), db: Session = Depends(get_db)
 ) -> APIResponseBase:
     """
     Refresh access token
@@ -97,6 +102,7 @@ async def refresh_access_token(
 
     if not authorization:
         logger.error("Authorization header is missing")
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return APIResponseBase.bad_request(message="Authorization header is missing")
 
     # extract token from header
@@ -107,11 +113,13 @@ async def refresh_access_token(
     )
     if not refresh_token_decoded:
         logger.error("Invalid refresh token")
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return APIResponseBase.bad_request(message="Invalid refresh token")
 
     customer = CustomerQuery.get_customer_by_uuid(db, refresh_token_decoded.uuid)
     if not customer:
         logger.error("Customer not found")
+        response.status_code = status.HTTP_404_NOT_FOUND
         return APIResponseBase.not_found(message="Customer not found")
 
     access_token_data = {
@@ -122,6 +130,7 @@ async def refresh_access_token(
 
     access_token = JWTHandler.create_access_token(access_token_data)
 
+    response.status_code = status.HTTP_200_OK
     return APIResponseBase.success_response(
         data=CustomerLoginResponse(
             access_token=access_token, refresh_token=refresh_token
