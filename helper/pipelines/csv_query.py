@@ -20,7 +20,17 @@ from datetime import datetime
 
 def csv_pipeline(embedding_path: str, customer_query: str) -> str:
     """
-    load the embedding and query the csv file
+    Load the embedding and query the csv file.
+
+    Args:
+        embedding_path (str): The path to the embedding.
+        customer_query (str): The query to be executed.
+
+    Returns:
+        str: The response from the query.
+
+    Raises:
+        HTTPException: If there is an error while querying the csv file.
     """
     try:
         logger.debug(f"Querying csv: {embedding_path}")
@@ -49,11 +59,20 @@ def csv_pipeline(embedding_path: str, customer_query: str) -> str:
     return str(response)
 
 
-def csv_pipeline_v2(csv_path: str, customer_query: str, model:str = Config.DEFAULT_OPENAI_MODEL) -> str:
+def csv_pipeline_v2(
+    csv_path: str, customer_query: str, model: str = Config.DEFAULT_OPENAI_MODEL
+) -> str:
     """
-    Query the csv file using the query pipeline
-    """
+    Query the csv file using the query pipeline.
 
+    Args:
+        csv_path (str): The path to the csv file.
+        customer_query (str): The query to be executed.
+        model (str, optional): The OpenAI model to be used. Defaults to Config.DEFAULT_OPENAI_MODEL.
+
+    Returns:
+        str: The response from the query.
+    """
     logger.debug(f"Reading csv file: {csv_path}")
     df = pd.read_csv(csv_path)
 

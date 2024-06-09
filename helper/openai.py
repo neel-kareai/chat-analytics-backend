@@ -8,13 +8,20 @@ from logger import logger
 
 
 def create_document_embedding(
-        document_path: str,
-        customer_uuid: str,
+    document_path: str,
+    customer_uuid: str,
 ) -> str:
     """
-        Create an embedding for a document and return the embedding 
-        path
+    Create a document embedding for the given document path and customer UUID.
+
+    Args:
+        document_path (str): The path of the document to create the embedding for.
+        customer_uuid (str): The UUID of the customer.
+
+    Returns:
+        str: The name of the chroma collection where the document embedding is stored.
     """
+
     try:
         openai_embedding = OpenAIEmbedding(model=Config.DEFAULT_OPENAI_EMBEDDING_MODEL)
         doc = SimpleDirectoryReader(
@@ -42,7 +49,7 @@ def create_document_embedding(
         logger.error(f"Failed to create document embedding: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create document embedding"
+            detail="Failed to create document embedding",
         )
 
     return chroma_collection_name

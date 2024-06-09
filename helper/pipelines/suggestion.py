@@ -13,7 +13,14 @@ import re, json
 
 def get_csv_schema(data_source: UserDocument) -> str:
     """
-    returns the head of the csv file
+    Returns the head of the csv file.
+
+    Args:
+        data_source (UserDocument): The UserDocument object representing the CSV file.
+
+    Returns:
+        str: The schema of the CSV file.
+
     """
     df = pd.read_csv(data_source.document_url)
     csv_schema = f"""
@@ -26,7 +33,14 @@ def get_csv_schema(data_source: UserDocument) -> str:
 
 def extract_json(text: str) -> dict | Any:
     """
-    Extract the JSON from the text
+    Extracts the JSON from the text.
+
+    Args:
+        text (str): The text containing the JSON.
+
+    Returns:
+        dict | Any: The extracted JSON.
+
     """
     # assuming we have received json in ```json``` format
     json_text = re.search(r"```json(.*)```", text, re.DOTALL)
@@ -46,7 +60,15 @@ def suggestion_pipeline(
     request: AISuggestionRequest, data_source: UserDocument | DBConfig
 ) -> List[str]:
     """
-    Give 3-5 suggestions for a given query and data source
+    Gives 3-5 suggestions for a given query and data source.
+
+    Args:
+        request (AISuggestionRequest): The AISuggestionRequest object containing the request details.
+        data_source (UserDocument | DBConfig): The data source (CSV file or database) for the suggestions.
+
+    Returns:
+        List[str]: A list of suggested queries.
+
     """
     openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
 
