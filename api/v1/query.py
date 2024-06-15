@@ -4,6 +4,7 @@ from helper.auth import AccessTokenData, get_current_user
 from schemas.query import CustomerQueryRequest, CustomerQueryResponse
 from db.queries.db_config import DBConfigQuery
 from db.queries.user_documents import UserDocumentQuery
+from db.queries.chat_history import ChatHistoryQuery
 from db import get_db
 from sqlalchemy.orm import Session
 from logger import logger
@@ -40,6 +41,17 @@ async def query(
 
     result = None
     sql_query = None
+    chat_uuid = None
+    if request.chat_uuid is None:
+        # create new chat history
+        logger.debug(f"Creating new chat history")
+        chat_history = ChatHistoryQuery.create_new_chat_history(
+            db, current_user.id, query_type, request.data_source_id
+        )
+        db.commit()
+    else:
+        logger.debug(f"Using existing chat history: {request.chat_uuid}")
+        chat_uuid = request.chat_uuid
 
     if query_type == "csv":
         logger.debug(f"Received query for CSV")
@@ -103,6 +115,7 @@ async def query(
             response=result,
             sql_query=sql_query if query_type == "db" else None,
             data_source_id=request.data_source_id,
+            chat_uuid=chat_uuid,
         ),
     )
 
@@ -111,6 +124,7 @@ async def query(
 def chat(
     request: CustomerQueryRequest,
     response: Response,
+    db: Session = Depends(get_db),
     current_user: AccessTokenData = Depends(get_current_user),
 ) -> APIResponseBase:
     """
@@ -125,7 +139,18 @@ def chat(
         APIResponseBase: The API response containing the chat result.
     """
     logger.debug(f"Received chat request")
-    result = simple_chat_pipeline(request.query, request.model)
+    chat_uuid = None
+    if request.chat_uuid is None:
+        # create new chat history
+        chat_history = ChatHistoryQuery.create_new_chat_history(
+            db, current_user.uuid, "chat", request.data_source_id
+        )
+        db.commit()
+        chat_uuid = str(chat_history.uuid)
+    else:
+        chat_uuid = request.chat_uuid
+
+    result = simple_chat_pipeline(request.query, chat_uuid, request.model)
 
     response.status_code = status.HTTP_200_OK
     return APIResponseBase.success_response(
@@ -133,5 +158,6 @@ def chat(
         data=CustomerQueryResponse(
             query=request.query,
             response=result,
+            chat_uuid=chat_uuid,
         ),
     )

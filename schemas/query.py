@@ -16,6 +16,7 @@ class CustomerQueryRequest(BaseModel):
     query: str
     data_source_id: Optional[int] = None
     model: str = Config.DEFAULT_OPENAI_MODEL
+    chat_uuid: Optional[str] = None
 
 
 class CustomerQueryResponse(BaseModel):
@@ -33,3 +34,4 @@ class CustomerQueryResponse(BaseModel):
     response: str
     sql_query: Optional[str] = None
     data_source_id: Optional[int] = None
+    chat_uuid: str

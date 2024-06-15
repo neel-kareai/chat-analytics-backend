@@ -2,6 +2,7 @@ from fastapi import APIRouter, status, Depends, Response
 from data_response.base_response import APIResponseBase
 from helper.auth import AccessTokenData, get_current_user
 from schemas.query import CustomerQueryRequest, CustomerQueryResponse
+from db.queries.chat_history import ChatHistoryQuery
 from db.queries.user_documents import UserDocumentQuery
 from db import get_db
 from sqlalchemy.orm import Session
@@ -39,6 +40,17 @@ async def query(query_type: str,
     
     logger.debug(f"Using LLM : {request.model}")
     result = None
+    chat_uuid = None
+
+    if request.chat_uuid is None:
+        # create new chat history
+        chat_history = ChatHistoryQuery.create_new_chat_history(
+            db, current_user.id, query_type, request.data_source_id
+        )
+        db.commit()
+        chat_uuid = chat_history.uuid   
+    else:
+        chat_uuid = request.chat_uuid
 
     if query_type == "csv":
         logger.debug(f"Received query for CSV")
@@ -74,6 +86,7 @@ async def query(query_type: str,
         data=CustomerQueryResponse(
             query=request.query,
             response=result,
+            chat_uuid=chat_uuid,
             data_source_id=request.data_source_id if query_type == "csv" else None
         )
     )

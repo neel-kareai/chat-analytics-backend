@@ -30,3 +30,6 @@ class Config:
 
     # CHROMA
     CHROMA_DB_PATH = os.getenv('CHROMA_DB_PATH')
+
+    # REDIS
+    REDIS_STORE_URL = os.getenv('REDIS_STORE_URL')
