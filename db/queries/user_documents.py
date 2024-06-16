@@ -39,7 +39,9 @@ class UserDocumentQuery:
         return user_document
 
     @staticmethod
-    def get_user_document_by_id(db: Session, user_document_id: int) -> UserDocument:
+    def get_user_document_by_id(
+        db: Session, user_document_id: int, doc_type: str = None
+    ) -> UserDocument:
         """
         Retrieve a user document by its ID.
 
@@ -50,10 +52,18 @@ class UserDocumentQuery:
         Returns:
             UserDocument: The retrieved user document.
         """
+        if doc_type:
+            return (
+                db.query(UserDocument)
+                .filter(UserDocument.id == user_document_id, UserDocument.document_type == doc_type)
+                .first()
+            )
         return db.query(UserDocument).filter(UserDocument.id == user_document_id).first()
 
     @staticmethod
-    def get_user_documents_by_customer_uuid(db: Session, customer_uuid: str) -> List[UserDocument]:
+    def get_user_documents_by_customer_uuid(
+        db: Session, customer_uuid: str
+    ) -> List[UserDocument]:
         """
         Retrieve all user documents for a given customer UUID.
 
@@ -64,10 +74,14 @@ class UserDocumentQuery:
         Returns:
             List[UserDocument]: A list of user documents.
         """
-        return db.query(UserDocument).filter(UserDocument.customer_uuid == customer_uuid).all()
+        return (
+            db.query(UserDocument)
+            .filter(UserDocument.customer_uuid == customer_uuid)
+            .all()
+        )
 
     @staticmethod
-    def update_embedding_path(db:Session, user_document_id:int, embedding_path:str):
+    def update_embedding_path(db: Session, user_document_id: int, embedding_path: str):
         """
         Update the embedding path of a user document.
 
@@ -79,7 +93,9 @@ class UserDocumentQuery:
         Returns:
             UserDocument: The updated user document.
         """
-        user_document = db.query(UserDocument).filter(UserDocument.id == user_document_id).first()
+        user_document = (
+            db.query(UserDocument).filter(UserDocument.id == user_document_id).first()
+        )
         user_document.embed_url = embedding_path
         user_document.is_embedded = True
         db.flush()
@@ -97,4 +113,34 @@ class UserDocumentQuery:
         Returns:
             bool: True if the user document was successfully deleted, False otherwise.
         """
-        raise NotImplementedError("Method not implemented")
+        user_document = (
+            db.query(UserDocument).filter(UserDocument.id == user_document_id).first()
+        )
+        if user_document:
+            db.delete(user_document)
+            db.flush()
+            return True
+        return False
+
+    @staticmethod
+    def update_user_document(
+        db: Session, user_document_id: int, document_name: str = None
+    ) -> UserDocument:
+        """
+        Update the name of a user document.
+
+        Args:
+            db (Session): The database session.
+            user_document_id (int): The ID of the user document.
+            document_name (str): The new name of the document.
+
+        Returns:
+            UserDocument: The updated user document.
+        """
+        user_document = (
+            db.query(UserDocument).filter(UserDocument.id == user_document_id).first()
+        )
+        if document_name:
+            user_document.document_name = document_name
+        db.flush()
+        return user_document

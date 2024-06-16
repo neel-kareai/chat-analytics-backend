@@ -14,3 +14,14 @@ class UserDocumentUploadResponse(BaseModel):
     document_id: int
     document_name: str
     document_type: str
+
+
+class UserDocumentUpdateRequest(BaseModel):
+    """
+    Represents a request to update a user document.
+
+    Attributes:
+        document_name (str): The new name for the document.
+    """
+
+    document_name: str
