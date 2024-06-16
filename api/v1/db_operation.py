@@ -4,6 +4,7 @@ from schemas.db_config import (
     NewDBCreateRequest,
     NewDBCreateResponse,
 )
+from db.queries.chat_history import ChatHistoryQuery
 from helper.auth import JWTHandler, AccessTokenData, get_current_user
 from db import get_db
 from sqlalchemy.orm import Session
@@ -44,6 +45,10 @@ async def create_new_db(
         return APIResponseBase.internal_server_error(
             message="Failed to create db config"
         )
+    
+    chat_history = ChatHistoryQuery.create_new_chat_history(
+        db, current_user.uuid, "db", db_config.id
+    )
 
     db.commit()
 

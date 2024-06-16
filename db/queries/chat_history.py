@@ -46,4 +46,30 @@ class ChatHistoryQuery:
             ChatHistory.query_type == query_type,
             ChatHistory.data_source_id == data_source_id,
         ).first()
+    
+    @staticmethod
+    def is_valid_chat_history(db: Session, chat_uuid: str, query_type: str, customer_uuid: str, data_source_id:int):
+        """
+        Checks if a chat history record is valid.
+
+        Args:
+            db (Session): The database session.
+            chat_uuid (str): The UUID of the chat history record.
+            query_type (str): The type of the query.
+            customer_uuid (str): The UUID of the customer.
+            data_source_id (int): The ID of the data source.
+
+        Returns:
+            bool: True if the chat history record is valid, False otherwise.
+        """
+        chat_history = db.query(ChatHistory).filter(
+            ChatHistory.uuid == chat_uuid,
+            ChatHistory.customer_uuid == customer_uuid,
+            ChatHistory.query_type == query_type,
+            ChatHistory.data_source_id == data_source_id,
+        ).first()
+
+        if chat_history:
+            return True
+        return False
 

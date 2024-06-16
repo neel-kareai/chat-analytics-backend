@@ -1,14 +1,82 @@
 from datetime import datetime
-from openai import OpenAI
 from config import Config
 from logger import logger
 from helper.openai import openai_chat_completion_with_retry
 from llama_index.core.query_pipeline import QueryPipeline, InputComponent
 from llama_index.storage.chat_store.redis import RedisChatStore
 from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.llms.openai import OpenAI
+from typing import Any, Dict, List, Optional
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms import ChatMessage
-from helper.pipelines import ResponseWithChatHistory
+from llama_index.core.query_pipeline import CustomQueryComponent
+from llama_index.llms.openai import OpenAI
+
+
+class SimpleResponseWithChatHistory(CustomQueryComponent):
+    llm: OpenAI = Field(..., description="LLM")
+    system_prompt: Optional[str] = Field(
+        default=None, description="System prompt to use for the LLM"
+    )
+    context_prompt: str = Field(
+        description="Context prompt to use for the LLM",
+    )
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        # NOTE: this is OPTIONAL but we show you where to do validation as an example
+        return input
+
+    @property
+    def _input_keys(self) -> set:
+        """Input keys dict."""
+        # NOTE: These are required inputs. If you have optional inputs please override
+        # `optional_input_keys_dict`
+        return {"chat_history", "query_str"}
+
+    @property
+    def _output_keys(self) -> set:
+        return {"response"}
+
+    def _prepare_context(
+        self,
+        chat_history: List[ChatMessage],
+        query_str: str,
+    ) -> List[ChatMessage]:
+
+        formatted_context = self.context_prompt.format(query_str=query_str)
+        user_message = ChatMessage(role="user", content=formatted_context)
+
+        chat_history.append(user_message)
+
+        if self.system_prompt is not None:
+            chat_history = [
+                ChatMessage(role="system", content=self.system_prompt)
+            ] + chat_history
+
+        return chat_history
+
+    def _run_component(self, **kwargs) -> Dict[str, Any]:
+        """Run the component."""
+        chat_history = kwargs["chat_history"]
+        query_str = kwargs["query_str"]
+
+        prepared_context = self._prepare_context(chat_history, query_str)
+
+        response = self.llm.chat(prepared_context)
+
+        return {"response": response}
+
+    async def _arun_component(self, **kwargs: Any) -> Dict[str, Any]:
+        """Run the component asynchronously."""
+        # NOTE: Optional, but async LLM calls are easy to implement
+        chat_history = kwargs["chat_history"]
+        query_str = kwargs["query_str"]
+
+        prepared_context = self._prepare_context(chat_history, query_str)
+
+        response = await self.llm.achat(prepared_context)
+
+        return {"response": response}
 
 
 def simple_chat_pipeline(
@@ -31,7 +99,7 @@ def simple_chat_pipeline(
 
     llm = OpenAI(model=model, temperature=0.0, top_p=0.2, api_key=Config.OPENAI_API_KEY)
 
-    response_component = ResponseWithChatHistory(
+    response_component = SimpleResponseWithChatHistory(
         llm=llm,
         context_prompt="""
             The customer has requested the following query:
@@ -70,11 +138,5 @@ def simple_chat_pipeline(
     user_msg = ChatMessage(role="user", content=customer_query)
     chat_memory.put(user_msg)
     chat_memory.put(response.message)
-
-    # response_text = openai_chat_completion_with_retry(
-    #     system_prompt=system_prompt,
-    #     user_prompt=query_prompt,
-    #     model=model,
-    # )
 
     return response.message.content

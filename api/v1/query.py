@@ -41,17 +41,16 @@ async def query(
 
     result = None
     sql_query = None
-    chat_uuid = None
     if request.chat_uuid is None:
-        # create new chat history
-        logger.debug(f"Creating new chat history")
-        chat_history = ChatHistoryQuery.create_new_chat_history(
-            db, current_user.id, query_type, request.data_source_id
-        )
-        db.commit()
-    else:
-        logger.debug(f"Using existing chat history: {request.chat_uuid}")
-        chat_uuid = request.chat_uuid
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return APIResponseBase.bad_request(message="chat_uuid is required")
+
+    if not ChatHistoryQuery.is_valid_chat_history(
+        db, request.chat_uuid, query_type, current_user.uuid, request.data_source_id
+    ):
+        logger.error("Invalid chat history")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return APIResponseBase.bad_request(message="Invalid chat uuid")
 
     if query_type == "csv":
         logger.debug(f"Received query for CSV")
@@ -95,15 +94,19 @@ async def query(
         if str(db_config.customer_uuid) != current_user.uuid:
             logger.error("Unauthorized access")
             return APIResponseBase.unauthorized(message="Unauthorized access")
-        try:
-            result, sql_query = db_config_pipeline(
-                db_config.db_type, db_config.db_config, request.query, request.model
-            )
-        except Exception as e:
-            logger.error(f"Failed to query db: {e}")
-            return APIResponseBase.internal_server_error(
-                message="Failed to query db. Please check your query and try again."
-            )
+        # try:
+        result, sql_query = db_config_pipeline(
+            db_config.db_type,
+            db_config.db_config,
+            request.query,
+            request.chat_uuid,
+            request.model,
+        )
+        # except Exception as e:
+        #     logger.error(f"Failed to query db: {e}")
+        #     return APIResponseBase.internal_server_error(
+        #         message="Failed to query db. Please check your query and try again."
+        #     )
     else:
         logger.error("Invalid query type")
         return APIResponseBase.bad_request(message="Invalid query type")
@@ -115,7 +118,7 @@ async def query(
             response=result,
             sql_query=sql_query if query_type == "db" else None,
             data_source_id=request.data_source_id,
-            chat_uuid=chat_uuid,
+            chat_uuid=request.chat_uuid,
         ),
     )
 
