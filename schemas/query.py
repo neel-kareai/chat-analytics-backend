@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from config import Config
+from uuid import UUID
 
 
 class CustomerQueryRequest(BaseModel):
@@ -16,7 +17,7 @@ class CustomerQueryRequest(BaseModel):
     query: str
     data_source_id: Optional[int] = None
     model: str = Config.DEFAULT_OPENAI_MODEL
-    chat_uuid: Optional[str] = None
+    chat_uuid: Optional[UUID] = None
 
 
 class CustomerQueryResponse(BaseModel):

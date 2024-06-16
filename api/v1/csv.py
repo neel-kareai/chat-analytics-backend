@@ -76,6 +76,7 @@ async def upload_csv(
     # Check the file mime type
     if file.content_type != "text/csv":
         logger.error("Invalid file type")
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return APIResponseBase.bad_request(message="Invalid file type")
 
     # Save the file with
@@ -83,16 +84,13 @@ async def upload_csv(
     with open(filename, "wb") as f:
         f.write(file.file.read())
 
-    embedding_path = create_document_embedding(
-        document_path=filename, customer_uuid=current_user.uuid
-    )
-
     new_csv_doc = UserDocumentQuery.create_user_document(
         db, current_user.uuid, "csv", file.filename, filename, "processing"
     )
 
     if not new_csv_doc:
         logger.error("Failed to create csv document")
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return APIResponseBase.internal_server_error(
             message="Failed to create csv document"
         )

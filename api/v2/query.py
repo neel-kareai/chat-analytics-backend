@@ -43,7 +43,7 @@ async def query(
     result = None
 
     if not ChatHistoryQuery.is_valid_chat_history(
-        db, request.chat_uuid, query_type, current_user.uuid, request.data_source_id
+        db, str(request.chat_uuid), query_type, current_user.uuid, request.data_source_id
     ):
         logger.error("Invalid chat history")
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -62,7 +62,7 @@ async def query(
             return APIResponseBase.unauthorized(message="Unauthorized access")
 
         result = csv_pipeline_v2(
-            csv_file.document_url, request.query, request.chat_uuid, request.model
+            csv_file.document_url, request.query, str(request.chat_uuid), request.model
         )
 
     else:
@@ -76,7 +76,7 @@ async def query(
         data=CustomerQueryResponse(
             query=request.query,
             response=result,
-            chat_uuid=request.chat_uuid,
+            chat_uuid=str(request.chat_uuid),
             data_source_id=request.data_source_id if query_type == "csv" else None,
         ),
     )

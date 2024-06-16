@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from logger import logger
 from helper.pipelines.db_query import db_config_pipeline
 from helper.pipelines.csv_query import csv_pipeline
+from helper.pipelines.excel_query import excel_pipeline
 from helper.pipelines.simple_chat import simple_chat_pipeline
 
 
@@ -46,7 +47,7 @@ async def query(
         return APIResponseBase.bad_request(message="chat_uuid is required")
 
     if not ChatHistoryQuery.is_valid_chat_history(
-        db, request.chat_uuid, query_type, current_user.uuid, request.data_source_id
+        db, str(request.chat_uuid), query_type, current_user.uuid, request.data_source_id
     ):
         logger.error("Invalid chat history")
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -82,7 +83,28 @@ async def query(
         #     )
 
         # result = csv_pipeline(csv_file.embed_url, request.query)
+    elif query_type == "excel":
+        logger.debug(f"Received query for Excel")
 
+        excel_file = UserDocumentQuery.get_user_document_by_id(
+            db, request.data_source_id
+        )
+        if not excel_file:
+            logger.error("Excel file not found")
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return APIResponseBase.bad_request(message="Excel file not found")
+
+        if str(excel_file.customer_uuid) != current_user.uuid:
+            logger.error("Unauthorized access")
+            response.status_code = status.HTTP_401_UNAUTHORIZED
+            return APIResponseBase.unauthorized(message="Unauthorized access")
+
+        result = excel_pipeline(
+            excel_file.document_url,
+            request.query,
+            str(request.chat_uuid),
+            request.model,
+        )
     elif query_type == "db":
         logger.debug(f"Received query for DB")
 
@@ -99,7 +121,7 @@ async def query(
                 db_config.db_type,
                 db_config.db_config,
                 request.query,
-                request.chat_uuid,
+                str(request.chat_uuid),
                 request.model,
             )
         except Exception as e:
@@ -118,7 +140,7 @@ async def query(
             response=result,
             sql_query=sql_query if query_type == "db" else None,
             data_source_id=request.data_source_id,
-            chat_uuid=request.chat_uuid,
+            chat_uuid=str(request.chat_uuid),
         ),
     )
 
@@ -151,7 +173,7 @@ def chat(
         db.commit()
         chat_uuid = str(chat_history.uuid)
     else:
-        chat_uuid = request.chat_uuid
+        chat_uuid = str(request.chat_uuid)
 
     result = simple_chat_pipeline(request.query, chat_uuid, request.model)
 
