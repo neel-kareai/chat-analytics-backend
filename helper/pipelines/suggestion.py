@@ -7,6 +7,7 @@ from db.models.db_config import DBConfig
 from db.models.user_document import UserDocument
 from typing import List, Any
 from helper.pipelines.db_query import get_db_schema, get_db_connection_string
+from helper.pipelines.excel_query import get_excel_schema
 import pandas as pd
 import re, json
 from helper.openai import openai_chat_completion_with_retry
@@ -118,15 +119,15 @@ def suggestion_pipeline(
             else "This is the first query of the user"
         )
         if isinstance(data_source, UserDocument):
-            logger.debug("Case 3: Data source is a csv file")
+            logger.debug(f"Case 3: Data source is a {data_source.document_type} file")
             system_prompt = f"""
             You are an assistance with data analyst and database expertise. Your job is
             to suggest 3-4 follow-up question that the user might be interested in based on the
-            csv file and user's last query.
+            {data_source.document_type} file and user's last query.
             """
             user_prompt = f"""
-            The csv file has the following schema:
-            {get_csv_schema(data_source)}
+            The {data_source.document_type} file has the following schema:
+            {get_csv_schema(data_source) if data_source.document_type == "csv" else get_excel_schema(data_source.document_url)}
 
             {last_ques_str}
             Suggest some follow-up question that the user might be interested in.
@@ -156,15 +157,6 @@ def suggestion_pipeline(
             {output_format}
             """
 
-    # response = openai_client.chat.completions.create(
-    #     model=Config.DEFAULT_OPENAI_MODEL,
-    #     messages=[
-    #         {"role": "system", "content": system_prompt},
-    #         {"role": "user", "content": user_prompt},
-    #     ],
-    # )
-
-    # response_text = response.choices[0].message.content
     response_text = openai_chat_completion_with_retry(
         system_prompt=system_prompt,
         user_prompt=user_prompt,

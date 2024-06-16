@@ -39,22 +39,22 @@ def get_suggestion_based_on_query(
     data_source = None
     if request.query_type == "db":
         data_source = DBConfigQuery.get_db_config_by_id(db, request.data_source_id)
-    elif request.query_type == "csv":
+    elif request.query_type in ["csv", "excel"]:
         data_source = UserDocumentQuery.get_user_document_by_id(
             db, request.data_source_id
         )
 
     if not data_source and request.data_source_id is not None:
         response.status_code = status.HTTP_404_NOT_FOUND
-        return APIResponseBase.error_response(
-            message="Data source not found", status_code=status.HTTP_404_NOT_FOUND
+        return APIResponseBase.not_found(
+            message="Data source not found"
         )
 
     if data_source:
         if str(data_source.customer_uuid) != current_user.uuid:
             response.status_code = status.HTTP_403_FORBIDDEN
-            return APIResponseBase.error_response(
-                message="Forbidden", status_code=status.HTTP_403_FORBIDDEN
+            return APIResponseBase.forbidden(
+                message="Forbidden"
             )
 
     suggestions = suggestion_pipeline(request, data_source)
