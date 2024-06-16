@@ -96,7 +96,7 @@ async def upload_csv(
         )
 
     chat_history = ChatHistoryQuery.create_new_chat_history(
-        db, current_user.uuid, "csv", new_csv_doc.id
+        db, current_user.uuid, "csv", new_csv_doc.id, new_csv_doc.document_name
     )
 
     db.commit()

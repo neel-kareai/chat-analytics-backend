@@ -45,3 +45,34 @@ async def get_chat_history(
             "history": chat_history,
         },
     )
+
+@router.get("/")
+async def get_all_chat_history(
+    response: Response,
+    current_user: AccessTokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> APIResponseBase:
+    """
+    Get all chat history for the current user.
+
+    Args:
+        response (Response): The response object to be returned.
+        current_user (AccessTokenData, optional): The current user. Defaults to Depends(get_current_user).
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+
+    Returns:
+        APIResponseBase: The API response containing the chat history.
+    """
+    chat_history = ChatHistoryQuery.get_all_chat_history(db, current_user.uuid)
+    if not chat_history:
+        logger.error("Chat history not found")
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return APIResponseBase.not_found(message="Chat history not found")
+
+    return APIResponseBase.success_response(
+        message="Chat history found",
+        data={
+            "customer_uuid": current_user.uuid,
+            "history": chat_history,
+        },
+   )

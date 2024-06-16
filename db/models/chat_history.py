@@ -13,6 +13,7 @@ class ChatHistory(Base):
         'customers.uuid'), nullable=False)
     query_type = Column(String, nullable=False)
     data_source_id = Column(Integer)
+    title = Column(String)
     created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
     updated_at = Column(
         TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False

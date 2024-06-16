@@ -61,7 +61,7 @@ async def upload_csv(
         )
 
     chat_history = ChatHistoryQuery.create_new_chat_history(
-        db, current_user.uuid, "excel", new_excel_doc.id
+        db, current_user.uuid, "excel", new_excel_doc.id, new_excel_doc.document_name
     )
 
     db.commit()

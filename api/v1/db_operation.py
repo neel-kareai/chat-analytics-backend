@@ -45,9 +45,13 @@ async def create_new_db(
         return APIResponseBase.internal_server_error(
             message="Failed to create db config"
         )
-    
+
     chat_history = ChatHistoryQuery.create_new_chat_history(
-        db, current_user.uuid, "db", db_config.id
+        db,
+        current_user.uuid,
+        "db",
+        db_config.id,
+        request.db_type + " : " + request.db_config["dbname"],
     )
 
     db.commit()

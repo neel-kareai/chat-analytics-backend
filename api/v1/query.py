@@ -47,7 +47,11 @@ async def query(
         return APIResponseBase.bad_request(message="chat_uuid is required")
 
     if not ChatHistoryQuery.is_valid_chat_history(
-        db, str(request.chat_uuid), query_type, current_user.uuid, request.data_source_id
+        db,
+        str(request.chat_uuid),
+        query_type,
+        current_user.uuid,
+        request.data_source_id,
     ):
         logger.error("Invalid chat history")
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -168,7 +172,7 @@ def chat(
     if request.chat_uuid is None:
         # create new chat history
         chat_history = ChatHistoryQuery.create_new_chat_history(
-            db, current_user.uuid, "chat", request.data_source_id
+            db, current_user.uuid, "chat", request.data_source_id, request.query[:100]
         )
         db.commit()
         chat_uuid = str(chat_history.uuid)
