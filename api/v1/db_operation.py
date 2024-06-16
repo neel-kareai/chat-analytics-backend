@@ -10,6 +10,9 @@ from db import get_db
 from sqlalchemy.orm import Session
 from db.queries.db_config import DBConfigQuery
 from logger import logger
+from helper.pipelines.db_query import get_db_connection_string
+from sqlalchemy import create_engine, text
+
 
 router = APIRouter(prefix="/db-operation", tags=["db_operation"])
 
@@ -100,4 +103,48 @@ async def get_db_config(
             "db_configs": [db_config.to_dict() for db_config in db_configs],
             "customer_uuid": current_user.uuid,
         },
+    )
+
+
+@router.post("/test-connection")
+async def test_db_connection(
+    request: NewDBCreateRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: AccessTokenData = Depends(get_current_user),
+) -> APIResponseBase:
+    """
+    Test the connection to a new database configuration.
+
+    Args:
+        request (NewDBCreateRequest): The request object containing the details of the new database configuration.
+        response (Response): The response object to be returned.
+        db (Session, optional): The database session. Defaults to Depends(get_db).
+        current_user (AccessTokenData, optional): The current user. Defaults to Depends(get_current_user).
+
+    Returns:
+        APIResponseBase: The API response determining the success of the connection test.
+    """
+
+    db_url = get_db_connection_string(
+        request.db_type,
+        request.db_config["user"],
+        request.db_config["password"],
+        request.db_config["hostname"],
+        request.db_config["port"],
+        request.db_config["dbname"],
+    )
+
+    engine = create_engine(db_url)
+
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1;"))
+    except Exception as e:
+        logger.error(f"Failed to connect to db: {e}")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return APIResponseBase.bad_request(message="Failed to connect to db")
+
+    return APIResponseBase.success_response(
+        message="DB connection successful", data={"status": "success"}
     )
