@@ -153,7 +153,7 @@ def csv_pipeline_v2(
     logger.debug(f"Reading csv file: {csv_path}")
     df = pd.read_csv(csv_path)
 
-    chat_store = RedisChatStore(redis_url=Config.REDIS_STORE_URL, ttl=300)
+    chat_store = RedisChatStore(redis_url=Config.REDIS_STORE_URL)
     chat_memory = ChatMemoryBuffer.from_defaults(
         chat_store=chat_store, chat_store_key=chat_uuid, token_limit=5000
     )

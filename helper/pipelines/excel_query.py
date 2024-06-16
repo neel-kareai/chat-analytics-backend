@@ -112,7 +112,7 @@ def excel_pipeline(
     logger.debug(f"Querying Excel file: {excel_path}")
     df = pd.read_excel(excel_path, sheet_name=None)
 
-    chat_store = RedisChatStore(redis_url=Config.REDIS_STORE_URL, ttl=300)
+    chat_store = RedisChatStore(redis_url=Config.REDIS_STORE_URL)
     chat_memory = ChatMemoryBuffer.from_defaults(
         chat_store=chat_store, chat_store_key=chat_uuid, token_limit=5000
     )
@@ -126,6 +126,7 @@ def excel_pipeline(
         "4. PRINT ONLY THE EXPRESSION.\n"
         "5. Do not quote the expression.\n"
         f"6. The current timestamp is {datetime.utcnow()}.\n"
+        "7. Always use the sheet name to access the dataframe. For example, `df['Sheet1']`.\n"
     )
 
     pandas_prompt_str = (

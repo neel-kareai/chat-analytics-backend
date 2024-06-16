@@ -226,7 +226,7 @@ def db_config_pipeline(
 
     llm = OpenAI(model=model, temperature=0.0, top_p=0.2, api_key=Config.OPENAI_API_KEY)
 
-    chat_store = RedisChatStore(redis_url=Config.REDIS_STORE_URL, ttl=300)
+    chat_store = RedisChatStore(redis_url=Config.REDIS_STORE_URL)
     chat_memory = ChatMemoryBuffer.from_defaults(
         chat_store=chat_store, chat_store_key=chat_uuid, token_limit=5000
     )

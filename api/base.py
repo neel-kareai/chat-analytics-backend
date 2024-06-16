@@ -11,6 +11,7 @@ from api.v1 import llm_models
 from api.v1 import datasource
 from api.v1 import excel
 from api.v1 import query_suggestions
+from api.v1 import chat
 from api.v2 import query as query_v2
 
 router = APIRouter()
@@ -23,6 +24,7 @@ router.include_router(llm_models.router, prefix="/v1")
 router.include_router(datasource.router, prefix="/v1")
 router.include_router(query_suggestions.router, prefix="/v1")
 router.include_router(excel.router, prefix="/v1")
+router.include_router(chat.router, prefix="/v1")
 router.include_router(query_v2.router, prefix="/v2")
 
 @router.get("/health")
