@@ -94,19 +94,19 @@ async def query(
         if str(db_config.customer_uuid) != current_user.uuid:
             logger.error("Unauthorized access")
             return APIResponseBase.unauthorized(message="Unauthorized access")
-        # try:
-        result, sql_query = db_config_pipeline(
-            db_config.db_type,
-            db_config.db_config,
-            request.query,
-            request.chat_uuid,
-            request.model,
-        )
-        # except Exception as e:
-        #     logger.error(f"Failed to query db: {e}")
-        #     return APIResponseBase.internal_server_error(
-        #         message="Failed to query db. Please check your query and try again."
-        #     )
+        try:
+            result, sql_query = db_config_pipeline(
+                db_config.db_type,
+                db_config.db_config,
+                request.query,
+                request.chat_uuid,
+                request.model,
+            )
+        except Exception as e:
+            logger.error(f"Failed to query db: {e}")
+            return APIResponseBase.internal_server_error(
+                message="Failed to query db. Please check your query and try again."
+            )
     else:
         logger.error("Invalid query type")
         return APIResponseBase.bad_request(message="Invalid query type")

@@ -13,6 +13,7 @@ from logger import logger
 from db import get_db
 from db.queries.user_documents import UserDocumentQuery
 from db.models.user_document import UserDocument
+from db.queries.chat_history import ChatHistoryQuery
 from schemas.user_documents import UserDocumentUploadResponse
 from sqlalchemy.orm import Session
 from config import Config
@@ -95,6 +96,10 @@ async def upload_csv(
         return APIResponseBase.internal_server_error(
             message="Failed to create csv document"
         )
+
+    chat_history = ChatHistoryQuery.create_new_chat_history(
+        db, current_user.uuid, "csv", new_csv_doc.id
+    )
 
     db.commit()
     background_tasks.add_task(process_embedding, db, new_csv_doc)
