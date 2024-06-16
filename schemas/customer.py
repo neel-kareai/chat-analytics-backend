@@ -60,3 +60,11 @@ class CustomerLoginResponse(BaseModel):
 
     access_token: str
     refresh_token: str
+
+
+class CustomerProfileUpdateRequest(BaseModel):
+    """
+    Represents the request model for updating the customer profile.
+    """
+
+    name: str

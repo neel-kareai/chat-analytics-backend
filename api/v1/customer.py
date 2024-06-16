@@ -5,8 +5,9 @@ from schemas.customer import (
     CustomerLoginResponse,
     CustomerRegisterRequest,
     CustomerRegisterResponse,
+    CustomerProfileUpdateRequest,
 )
-from helper.auth import JWTHandler, RefreshTokenData
+from helper.auth import JWTHandler, RefreshTokenData, AccessTokenData, get_current_user
 from db import get_db
 from sqlalchemy.orm import Session
 from db.queries.customer import CustomerQuery
@@ -163,4 +164,67 @@ async def refresh_access_token(
             access_token=access_token, refresh_token=refresh_token
         ).model_dump(),
         message="Access token refreshed successfully",
+    )
+
+
+@router.get("/profile")
+async def get_customer_profile(
+    response: Response,
+    current_user: AccessTokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> APIResponseBase:
+    """
+    Get the profile of the current customer.
+    """
+
+    customer = CustomerQuery.get_customer_by_uuid(db, current_user.uuid)
+
+    if not customer:
+        logger.error("Customer not found")
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return APIResponseBase.not_found(message="Customer not found")
+
+    response.status_code = status.HTTP_200_OK
+    return APIResponseBase.success_response(
+        data=customer.to_dict(),
+        message="Customer found",
+    )
+
+
+@router.put("/profile")
+async def update_customer_profile(
+    request: CustomerProfileUpdateRequest,
+    response: Response,
+    current_user: AccessTokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> APIResponseBase:
+    """
+    Update the profile of the current customer.
+    """
+
+    customer = CustomerQuery.get_customer_by_uuid(db, current_user.uuid)
+
+    if not customer:
+        logger.error("Customer not found")
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return APIResponseBase.not_found(message="Customer not found")
+
+    customer = CustomerQuery.update_customer_profile(
+        db, current_user.uuid, request.name
+    )
+    db.commit()
+
+    if not customer:
+        logger.error("Failed to update customer profile")
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return APIResponseBase.internal_server_error(
+            message="Failed to update customer profile"
+        )
+
+    db.commit()
+
+    response.status_code = status.HTTP_200_OK
+    return APIResponseBase.success_response(
+        data=customer.to_dict(),
+        message="Customer profile updated successfully",
     )

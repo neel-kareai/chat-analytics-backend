@@ -45,7 +45,7 @@ class CustomerQuery:
         return db.query(Customer).filter(Customer.email == email).first()
 
     @staticmethod
-    def get_customer_by_uuid(db: Session, uuid: str):
+    def get_customer_by_uuid(db: Session, uuid: str)-> Customer:
         """
         Retrieves a customer from the database by UUID.
 
@@ -95,3 +95,23 @@ class CustomerQuery:
         customer.last_login = datetime.utcnow()
         db.commit()
         return customer
+    
+    @staticmethod
+    def update_customer_profile(db: Session, uuid: str, name: str=None):
+        """
+        Updates the profile of a customer in the database.
+
+        Args:
+            db (Session): The database session.
+            uuid (str): The UUID of the customer.
+            name (str): The name of the customer.
+
+        Returns:
+            Customer: The updated customer object.
+        """
+        customer = CustomerQuery.get_customer_by_uuid(db, uuid)
+        if name:
+            customer.name = name
+        db.flush()
+        return customer
+    

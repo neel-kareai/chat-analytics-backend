@@ -31,3 +31,13 @@ class Customer(Base):
     created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
     updated_at = Column(TIMESTAMP, default=datetime.utcnow,
                         onupdate=datetime.utcnow, nullable=False)
+    
+    def to_dict(self):
+        return {
+            "uuid": str(self.uuid),
+            "name": self.name,
+            "email": self.email,
+            "last_login": self.last_login,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
