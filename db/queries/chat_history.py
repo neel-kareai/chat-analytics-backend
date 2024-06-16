@@ -220,3 +220,24 @@ class ChatHistoryQuery:
             ]
 
         return chat_history
+
+    @staticmethod
+    def delete_chat_history_by_uuid(db: Session, chat_uuid: str):
+        chat_history = (
+            db.query(ChatHistory).filter(ChatHistory.uuid == chat_uuid).first()
+        )
+        if chat_history is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Chat history NOT found",
+            )
+        db.delete(chat_history)
+        db.flush()
+
+        chat_store = RedisChatStore(redis_url=Config.REDIS_STORE_URL, ttl=300)
+        chat_memory_buffer = ChatMemoryBuffer.from_defaults(
+            chat_store=chat_store, chat_store_key=str(chat_uuid), token_limit=5000
+        )
+        chat_memory_buffer.reset()
+
+        return {"message": "Chat history deleted successfully"}

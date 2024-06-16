@@ -3,6 +3,7 @@ from data_response.base_response import APIResponseBase
 from schemas.db_config import (
     NewDBCreateRequest,
     NewDBCreateResponse,
+    DBConfigUpdateRequest,
 )
 from db.queries.chat_history import ChatHistoryQuery
 from helper.auth import JWTHandler, AccessTokenData, get_current_user
@@ -147,4 +148,78 @@ async def test_db_connection(
 
     return APIResponseBase.success_response(
         message="DB connection successful", data={"status": "success"}
+    )
+
+
+@router.put("/{db_config_id}")
+async def update_db_config(
+    db_config_id: int,
+    request: DBConfigUpdateRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: AccessTokenData = Depends(get_current_user),
+) -> APIResponseBase:
+    """
+    Update an existing database configuration.
+    """
+
+    db_config = DBConfigQuery.get_db_config_by_id(db, db_config_id, current_user.uuid)
+
+    if not db_config:
+        logger.error("DB config not found")
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return APIResponseBase.not_found(message="DB config not found")
+
+    db_config = DBConfigQuery.update_db_config_by_id(
+        db, db_config_id, request.db_type, request.db_config
+    )
+
+    if not db_config:
+        logger.error("Failed to update db config")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return APIResponseBase.bad_request(message="Failed to update db config")
+
+    db.commit()
+
+    response.status_code = status.HTTP_200_OK
+    return APIResponseBase.success_response(
+        message="DB config updated successfully",
+        data={
+            "db_config_id": db_config.to_dict(),
+            "message": "DB config updated successfully",
+        },
+    )
+
+
+@router.delete("/{db_config_id}")
+async def delete_db_config(
+    db_config_id: int,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: AccessTokenData = Depends(get_current_user),
+) -> APIResponseBase:
+    """
+    Delete a database configuration.
+    """
+
+    db_config = DBConfigQuery.get_db_config_by_id(db, db_config_id, current_user.uuid)
+    if not db_config:
+        logger.error("DB config not found")
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return APIResponseBase.not_found(message="DB config not found")
+
+    chat_history = ChatHistoryQuery.get_chat_history(
+        db, current_user.uuid, "db", db_config_id
+    )
+
+    DBConfigQuery.delete_db_config_by_id(db, db_config_id)
+    ChatHistoryQuery.delete_chat_history_by_uuid(db, chat_history.uuid)
+    db.commit()
+
+    response.status_code = status.HTTP_200_OK
+    return APIResponseBase.success_response(
+        message="DB config deleted successfully",
+        data={
+            "message": "DB config deleted successfully",
+        },
     )
