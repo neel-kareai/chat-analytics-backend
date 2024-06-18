@@ -6,6 +6,7 @@ from config import Config
 from logger import logger
 import re
 from helper.openai import openai_chat_completion_with_retry
+from helper.pipelines import post_processed_html_response
 from llama_index.core.query_pipeline import QueryPipeline, InputComponent, FnComponent
 from llama_index.core.prompts import PromptTemplate
 from llama_index.storage.chat_store.redis import RedisChatStore
@@ -265,7 +266,7 @@ def db_config_pipeline(
         "\n"
         "{sql_result}"
         "\n"
-        "Combine the result for more readability."
+        "Combine the result for more readability. Your response should always be in HTML format inside a <div> tag.\n"
         "\n"
         "response:"
     )
@@ -359,4 +360,4 @@ def db_config_pipeline(
     chat_memory.put(user_msg)
     chat_memory.put(result.message)
 
-    return refined_query_result, sql_query
+    return post_processed_html_response(refined_query_result), sql_query

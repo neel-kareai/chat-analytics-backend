@@ -2,6 +2,7 @@ from datetime import datetime
 from config import Config
 from logger import logger
 from helper.openai import openai_chat_completion_with_retry
+from helper.pipelines import post_processed_html_response
 from llama_index.core.query_pipeline import QueryPipeline, InputComponent
 from llama_index.storage.chat_store.redis import RedisChatStore
 from llama_index.core.memory import ChatMemoryBuffer
@@ -108,7 +109,8 @@ def simple_chat_pipeline(
             """,
         system_prompt="""
             You are an assistance with data analyst and database expertise. You should
-            answer the customer query and be helpful.
+            answer the customer query and be helpful. Your response should always be in HTML 
+            format inside a <div> tag.
             """,
     )
     input_component = InputComponent()
@@ -139,4 +141,4 @@ def simple_chat_pipeline(
     chat_memory.put(user_msg)
     chat_memory.put(response.message)
 
-    return response.message.content
+    return post_processed_html_response(response.message.content)

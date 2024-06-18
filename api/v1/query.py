@@ -8,10 +8,12 @@ from db.queries.chat_history import ChatHistoryQuery
 from db import get_db
 from sqlalchemy.orm import Session
 from logger import logger
+from helper.aws_s3 import download_from_s3
 from helper.pipelines.db_query import db_config_pipeline
 from helper.pipelines.csv_query import csv_pipeline
 from helper.pipelines.excel_query import excel_pipeline
 from helper.pipelines.simple_chat import simple_chat_pipeline
+import random, os
 
 
 router = APIRouter(prefix="/query", tags=["query"])
@@ -103,12 +105,26 @@ async def query(
             response.status_code = status.HTTP_401_UNAUTHORIZED
             return APIResponseBase.unauthorized(message="Unauthorized access")
 
+        # download the file from s3
+        s3_object_url = excel_file.document_url.split("amazonaws.com/")[-1]
+        file_extension = s3_object_url.split(".")[-1]
+        temp_file_name = random.randbytes(10).hex() + "." + file_extension
+        temp_file_path = f"./tmp/{temp_file_name}"
+        if not download_from_s3(s3_object_url, temp_file_path):
+            logger.error("Failed to download file from s3")
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            return APIResponseBase.internal_server_error(
+                message="Failed to download file from s3"
+            )
+
         result = excel_pipeline(
-            excel_file.document_url,
+            temp_file_path,
             request.query,
             str(request.chat_uuid),
             request.model,
         )
+        os.remove(temp_file_path)
+
     elif query_type == "db":
         logger.debug(f"Received query for DB")
 

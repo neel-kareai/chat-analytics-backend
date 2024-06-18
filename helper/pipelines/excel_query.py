@@ -5,7 +5,7 @@ from llama_index.core import VectorStoreIndex
 from config import Config
 from fastapi import HTTPException, status
 from logger import logger
-
+from helper.pipelines import post_processed_html_response
 import pandas as pd
 from llama_index.core.query_pipeline import (
     QueryPipeline as QP,
@@ -145,6 +145,7 @@ def excel_pipeline(
         "Query: {query_str}\n\n"
         "Pandas Instructions (optional):\n{pandas_instructions}\n\n"
         "Pandas Output: {pandas_output}\n\n"
+        "Your response should always be in HTML format inside a <div> tag.\n"
         "Response: "
     )
 
@@ -197,7 +198,7 @@ def excel_pipeline(
             # update chat memory
             chat_memory.put(ChatMessage(role="user", content=customer_query))
             chat_memory.put(result.message)
-            return response
+            return post_processed_html_response(response)
         except Exception as e:
             logger.error(f"Failed to run query pipeline: {e}")
             logger.info("Retrying in 5 seconds...")
