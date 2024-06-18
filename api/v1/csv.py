@@ -168,7 +168,7 @@ async def download_csv_document(
         )
 
     # return the file
-    file_name = csv_doc.document_url.split("/")[-1]
+    file_name = csv_doc.document_name
     file_path = f"./tmp/output/{file_name}"
     file = open(file_path, "rb")
     file_content = io.BytesIO(file.read())
