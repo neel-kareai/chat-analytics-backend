@@ -80,3 +80,12 @@ def check_file_exists(file_path):
 
 def get_s3_obj_url(file_path):
     return f"https://{Config.AWS_BUCKET_NAME}.s3.{Config.AWS_REGION_NAME}.amazonaws.com/{file_path}"
+
+def delete_s3_obj(file_path):
+    try:
+        s3_client.delete_object(Bucket=bucket_name, Key=file_path)
+        logger.info(f"Deleted file: {file_path}")
+        return True
+    except Exception as e:
+        logger.error(f"file not found in s3 bucket: {file_path} due to {e}")
+        return False

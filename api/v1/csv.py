@@ -21,7 +21,7 @@ from config import Config
 import random
 import os, io
 from helper.openai import create_document_embedding
-from helper.aws_s3 import upload_obj_to_s3, download_from_s3
+from helper.aws_s3 import upload_obj_to_s3, download_from_s3, delete_s3_obj
 
 
 router = APIRouter(prefix="/csv", tags=["csv"])
@@ -98,7 +98,6 @@ async def upload_csv(
     new_csv_doc = UserDocumentQuery.create_user_document(
         db, current_user.uuid, "csv", file.filename, s3_file_upload_url, "processing"
     )
-    
 
     if not new_csv_doc:
         logger.error("Failed to create csv document")
@@ -308,13 +307,20 @@ def delete_csv_document(
     chat_history = ChatHistoryQuery.get_chat_history(
         db, csv_doc.customer_uuid, "csv", csv_doc.id
     )
+
+    # delete the file
+    # os.remove(csv_doc.document_url)
+    object_url = csv_doc.document_url.split("amazonaws.com/")[-1]
+    s3_delete_status = delete_s3_obj(object_url)
+    if not s3_delete_status:
+        logger.error("Failed to delete file from s3")
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return APIResponseBase.internal_server_error(message="Failed to delete file")
+    
     if chat_history:
         ChatHistoryQuery.delete_chat_history_by_uuid(db, chat_history.uuid)
     UserDocumentQuery.delete_user_document(db, document_id)
     db.commit()
-
-    # delete the file
-    os.remove(csv_doc.document_url)
 
     response.status_code = status.HTTP_200_OK
     return APIResponseBase.success_response(

@@ -7,6 +7,7 @@ from fastapi import (
     BackgroundTasks,
     Response,
 )
+from fastapi.responses import JSONResponse
 from data_response.base_response import APIResponseBase
 from helper.auth import get_current_user, AccessTokenData
 from logger import logger
