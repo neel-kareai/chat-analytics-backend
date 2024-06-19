@@ -32,6 +32,7 @@ class NewDBCreateResponse(BaseModel):
 
     db_config_id: int
     message: str
+    chat_uuid: str
 
 class DBConfigUpdateRequest(BaseModel):
     """

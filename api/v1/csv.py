@@ -120,6 +120,7 @@ async def upload_csv(
             document_id=new_csv_doc.id,
             document_name=new_csv_doc.document_name,
             document_type=new_csv_doc.document_type,
+            chat_uuid=str(chat_history.uuid),
         ),
     )
 

@@ -64,7 +64,9 @@ async def create_new_db(
     return APIResponseBase.created(
         message="DB config created successfully",
         data=NewDBCreateResponse(
-            db_config_id=db_config.id, message="DB config created successfully"
+            db_config_id=db_config.id,
+            message="DB config created successfully",
+            chat_uuid=str(chat_history.uuid),
         ),
     )
 

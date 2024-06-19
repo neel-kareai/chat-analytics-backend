@@ -88,7 +88,11 @@ class ChatHistoryQuery:
             {"role": chat_message.role, "content": chat_message.content}
             for chat_message in chat_messages
         ]
-        return {"title": chat_history.title, "messages": chat_history_list}
+        return {
+            "title": chat_history.title,
+            "query_type": chat_history.query_type,
+            "messages": chat_history_list,
+        }
 
     @staticmethod
     def is_valid_chat_history(

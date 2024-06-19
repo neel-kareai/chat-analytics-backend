@@ -82,6 +82,7 @@ async def upload_csv(
             document_id=new_excel_doc.id,
             document_name=new_excel_doc.document_name,
             document_type=new_excel_doc.document_type,
+            chat_uuid=str(chat_history.uuid),
         ),
     )
 
