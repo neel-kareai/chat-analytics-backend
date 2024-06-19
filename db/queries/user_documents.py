@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from db.models.user_document import UserDocument
+from db.models.chat_history import ChatHistory
 from typing import List
 
 
@@ -55,10 +56,15 @@ class UserDocumentQuery:
         if doc_type:
             return (
                 db.query(UserDocument)
-                .filter(UserDocument.id == user_document_id, UserDocument.document_type == doc_type)
+                .filter(
+                    UserDocument.id == user_document_id,
+                    UserDocument.document_type == doc_type,
+                )
                 .first()
             )
-        return db.query(UserDocument).filter(UserDocument.id == user_document_id).first()
+        return (
+            db.query(UserDocument).filter(UserDocument.id == user_document_id).first()
+        )
 
     @staticmethod
     def get_user_documents_by_customer_uuid(
@@ -74,11 +80,34 @@ class UserDocumentQuery:
         Returns:
             List[UserDocument]: A list of user documents.
         """
-        return (
+        data = (
             db.query(UserDocument)
+            .with_entities(
+                UserDocument.id,
+                UserDocument.customer_uuid,
+                UserDocument.document_type,
+                UserDocument.document_name,
+                UserDocument.created_at,
+                UserDocument.updated_at,
+                ChatHistory.uuid.label("chat_uuid"),
+            )
+            .join(ChatHistory, ChatHistory.data_source_id == UserDocument.id)
             .filter(UserDocument.customer_uuid == customer_uuid)
             .all()
         )
+        dict_data = [
+            {
+                "id": d.id,
+                "customer_uuid": d.customer_uuid,
+                "document_type": d.document_type,
+                "document_name": d.document_name,
+                "created_at": d.created_at,
+                "updated_at": d.updated_at,
+                "chat_uuid": d.chat_uuid,
+            }
+            for d in data
+        ]
+        return dict_data
 
     @staticmethod
     def update_embedding_path(db: Session, user_document_id: int, embedding_path: str):

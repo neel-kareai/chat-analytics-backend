@@ -2,6 +2,7 @@ from fastapi import APIRouter, status, Depends, Header, Response
 from data_response.base_response import APIResponseBase
 from db.queries.db_config import DBConfigQuery
 from db.queries.user_documents import UserDocumentQuery
+from db.queries.chat_history import ChatHistoryQuery
 from db import get_db
 from helper.auth import AccessTokenData, get_current_user
 from logger import logger
@@ -31,13 +32,13 @@ async def get_datasources(
     user_docs = UserDocumentQuery.get_user_documents_by_customer_uuid(
         db, current_user.uuid
     )
-
+    
     response.status_code = status.HTTP_200_OK
     return APIResponseBase.success_response(
         message="Datasources fetched successfully",
         data={
-            "db_configs": [db_config.to_dict() for db_config in db_configs],
-            "user_docs": [user_doc.to_dict() for user_doc in user_docs],
+            "db_configs": db_configs,
+            "user_docs": user_docs,
             "customer_uuid": current_user.uuid,
         },
     )

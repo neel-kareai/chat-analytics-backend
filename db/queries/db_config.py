@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from db.models.db_config import DBConfig
+from db.models.chat_history import ChatHistory
 
 
 class DBConfigQuery:
@@ -38,7 +39,31 @@ class DBConfigQuery:
         Returns:
             List[DBConfig]: A list of DBConfig objects associated with the customer UUID.
         """
-        return db.query(DBConfig).filter(DBConfig.customer_uuid == customer_uuid).all()
+        data = (
+            db.query(DBConfig).with_entities(
+                DBConfig.id,
+                DBConfig.customer_uuid,
+                DBConfig.db_type,
+                ChatHistory.uuid.label("chat_uuid"),
+                DBConfig.created_at,
+                DBConfig.updated_at,
+            )
+            .filter(DBConfig.customer_uuid == customer_uuid)
+            .join(ChatHistory, ChatHistory.data_source_id == DBConfig.id)
+            .all()
+        )
+        dict_data = [
+            {
+                "id": d.id,
+                "customer_uuid": d.customer_uuid,
+                "db_type": d.db_type,
+                "chat_uuid": d.chat_uuid,
+                "created_at": d.created_at,
+                "updated_at": d.updated_at,
+            }
+            for d in data
+        ]
+        return dict_data
 
     @staticmethod
     def get_db_config_by_id(db: Session, db_id: int, customer_uuid: str = None):
