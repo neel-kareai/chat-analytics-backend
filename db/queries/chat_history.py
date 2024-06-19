@@ -5,6 +5,7 @@ from datetime import datetime
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.llms import ChatMessage
 from llama_index.storage.chat_store.redis import RedisChatStore
+from helper.pipelines import post_processed_html_response
 from config import Config
 
 
@@ -85,7 +86,10 @@ class ChatHistoryQuery:
         chat_messages = chat_memory_buffer.get()
         # list of messages with role and content
         chat_history_list = [
-            {"role": chat_message.role, "content": chat_message.content}
+            {
+                "role": chat_message.role,
+                "content": post_processed_html_response(chat_message.content),
+            }
             for chat_message in chat_messages
         ]
         return {
