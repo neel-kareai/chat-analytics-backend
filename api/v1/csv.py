@@ -203,6 +203,9 @@ async def get_csv_document(
     """
 
     csv_doc = UserDocumentQuery.get_user_document_by_id(db, document_id, "csv")
+    chat_history = ChatHistoryQuery.get_chat_history(
+        db, csv_doc.customer_uuid, "csv", csv_doc.id
+    )
 
     if not csv_doc:
         logger.error("CSV document not found")
@@ -221,6 +224,7 @@ async def get_csv_document(
             document_id=csv_doc.id,
             document_name=csv_doc.document_name,
             document_type=csv_doc.document_type,
+            chat_uuid=str(chat_history.uuid),
         ),
     )
 

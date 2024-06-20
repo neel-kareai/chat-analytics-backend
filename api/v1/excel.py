@@ -160,6 +160,9 @@ async def get_excel_document(
         APIResponseBase: The API response containing the document data.
     """
     excel_doc = UserDocumentQuery.get_user_document_by_id(db, document_id, "excel")
+    chat_history = ChatHistoryQuery.get_chat_history(
+        db, current_user.uuid, "excel", document_id
+    )
     if not excel_doc:
         logger.error("Excel document not found")
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -176,6 +179,7 @@ async def get_excel_document(
             document_id=excel_doc.id,
             document_name=excel_doc.document_name,
             document_type=excel_doc.document_type,
+            chat_uuid=str(chat_history.uuid),
         ),
     )
 
