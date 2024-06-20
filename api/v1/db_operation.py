@@ -103,7 +103,7 @@ async def get_db_config(
     return APIResponseBase.success_response(
         message="DB config found",
         data={
-            "db_configs": [db_config.to_dict() for db_config in db_configs],
+            "db_configs": db_configs,
             "customer_uuid": current_user.uuid,
         },
     )
