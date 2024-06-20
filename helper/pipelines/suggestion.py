@@ -128,8 +128,8 @@ def suggestion_pipeline(
             file_extension = object_url.split(".")[-1]
             temp_file_name = random.randbytes(10).hex() + "." + file_extension
             temp_file_path = f"./tmp/{temp_file_name}"
-            if not download_from_s3(doc_s3_url, temp_file_path):
-                logger.error(f"Could not download the file from S3: {doc_s3_url}")
+            if not download_from_s3(object_url, temp_file_path):
+                logger.error(f"Could not download the file from S3: {object_url}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Could not download the file from S3",
