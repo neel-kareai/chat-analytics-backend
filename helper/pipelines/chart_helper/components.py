@@ -19,6 +19,14 @@ from llama_index.legacy.llms.llm import LLM
 import json
 import pandas as pd
 import re
+from helper.pipelines.chart_helper import extract_backticks_content
+from helper.pipelines.chart_helper.schemas import (
+    BarChartData,
+    AreaChartData,
+    LineChartData,
+    PieChartData,
+    RadarChartData,
+)
 
 
 class ChartTypeSelector(CustomQueryComponent):
@@ -337,3 +345,110 @@ class ChartDataCodeExecutor(CustomQueryComponent):
         return {"chart_data": response}
 
 
+def chart_validator_tool(chart_data: dict, chart_type: Any) -> dict:
+    chart_info = json.loads(extract_backticks_content(chart_type, "json"))
+    print(chart_info)
+    chart_type_data = chart_info["chart_type"]
+
+    if chart_type_data == "bar":
+        try:
+            validator = BarChartData(root=chart_data)
+        except Exception as e:
+            print("Error during chart_validator_tool : ", e)
+            return None
+    elif chart_type_data == "area":
+        try:
+            validator = AreaChartData(root=chart_data)
+        except Exception as e:
+            print("Error during chart_validator_tool : ", e)
+            return None
+    elif chart_type_data == "line":
+        try:
+            validator = LineChartData(root=chart_data)
+        except Exception as e:
+            print("Error during chart_validator_tool : ", e)
+            return None
+    elif chart_type_data == "pie":
+        try:
+            validator = PieChartData(root=chart_data)
+        except Exception as e:
+            print("Error during chart_validator_tool : ", e)
+            return None
+    elif chart_type_data == "radar":
+        try:
+            validator = RadarChartData(root=chart_data)
+        except Exception as e:
+            print("Error during chart_validator_tool : ", e)
+            return None
+    else:
+        raise Exception(f"Invalid chart_type : '{chart_type_data}'")
+    return chart_data
+
+
+class CaptionGenerator(CustomQueryComponent):
+    llm: Any = Field(..., description="LLM")
+    system_prompt: Optional[str] = Field(
+        default=None, description="System prompt to use for the LLM"
+    )
+    context_prompt: Optional[str] = Field(
+        description="Context prompt to use for the LLM",
+    )
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        return input
+
+    @property
+    def _input_keys(self) -> set:
+        """Input keys dict."""
+        return {"chat_history", "query_str", "validated_chart_data"}
+
+    @property
+    def _output_keys(self) -> set:
+        return {"caption"}
+
+    def _prepare_context(
+        self,
+        chat_history: List[ChatMessage],
+        query_str: str,
+    ) -> List[ChatMessage]:
+
+        formatted_context = self.context_prompt.replace("{query_str}", query_str)
+
+        user_message = ChatMessage(role="user", content=formatted_context)
+
+        chat_history.append(user_message)
+
+        if self.system_prompt is not None:
+            chat_history = [
+                ChatMessage(role="system", content=self.system_prompt)
+            ] + chat_history
+
+        return chat_history
+
+    def _run_component(self, **kwargs) -> Dict[str, Any]:
+        """Run the component."""
+        chat_history = kwargs["chat_history"]
+        query_str = kwargs["query_str"]
+
+        prepared_context = self._prepare_context(
+            chat_history,
+            query_str,
+        )
+        print("CaptionGenerator: ", prepared_context)
+        response = self.llm.chat(prepared_context)
+
+        return {"caption": response}
+
+    async def _arun_component(self, **kwargs: Any) -> Dict[str, Any]:
+        """Run the component asynchronously."""
+        chat_history = kwargs["chat_history"]
+        query_str = kwargs["query_str"]
+
+        prepared_context = self._prepare_context(
+            chat_history,
+            query_str,
+        )
+        response = await self.llm.achat(prepared_context)
+
+        return {"caption": response}
