@@ -9,21 +9,23 @@ from typing import List, Any
 from helper.pipelines.db_query import get_db_schema, get_db_connection_string
 from helper.pipelines.excel_query import get_excel_schema
 import pandas as pd
-import re, json
+import re, json, random, os
 from helper.openai import openai_chat_completion_with_retry
+from helper.aws_s3 import download_from_s3
 
-def get_csv_schema(data_source: UserDocument) -> str:
+
+def get_csv_schema(csv_path: str) -> str:
     """
     Returns the head of the csv file.
 
     Args:
-        data_source (UserDocument): The UserDocument object representing the CSV file.
+        csv_path (str): The path to the CSV file.
 
     Returns:
         str: The schema of the CSV file.
 
     """
-    df = pd.read_csv(data_source.document_url)
+    df = pd.read_csv(csv_path)
     csv_schema = f"""
     The schema of the csv file is as follows:
     {df.head()}
@@ -120,6 +122,19 @@ def suggestion_pipeline(
         )
         if isinstance(data_source, UserDocument):
             logger.debug(f"Case 3: Data source is a {data_source.document_type} file")
+
+            doc_s3_url = data_source.document_url
+            object_url = doc_s3_url.split("amazonaws.com/")[-1]
+            file_extension = object_url.split(".")[-1]
+            temp_file_name = random.randbytes(10).hex() + "." + file_extension
+            temp_file_path = f"./tmp/{temp_file_name}"
+            if not download_from_s3(doc_s3_url, temp_file_path):
+                logger.error(f"Could not download the file from S3: {doc_s3_url}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Could not download the file from S3",
+                )
+
             system_prompt = f"""
             You are an assistance with data analyst and database expertise. Your job is
             to suggest 3-4 follow-up question that the user might be interested in based on the
@@ -127,12 +142,14 @@ def suggestion_pipeline(
             """
             user_prompt = f"""
             The {data_source.document_type} file has the following schema:
-            {get_csv_schema(data_source) if data_source.document_type == "csv" else get_excel_schema(data_source.document_url)}
+            {get_csv_schema(temp_file_path) if data_source.document_type == "csv" else get_excel_schema(temp_file_path)}
 
             {last_ques_str}
             Suggest some follow-up question that the user might be interested in.
             {output_format}
             """
+
+            os.remove(temp_file_path)
         else:
             logger.debug("Case 4: Data source is a database")
             db_config = data_source.db_config
