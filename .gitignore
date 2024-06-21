@@ -24,6 +24,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+chat_bkd_venv/
 MANIFEST
 
 # PyInstaller
@@ -169,3 +170,6 @@ cython_debug/
 *.csv
 *.pkl
 *.json
+
+tmp/
+chroma_db/
