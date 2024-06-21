@@ -1,0 +1,49 @@
+from llama_index.storage.chat_store.redis import RedisChatStore
+from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.llms import ChatMessage
+from llama_index.llms.openai import OpenAI
+import json
+from helper.pipelines.chart_helper import extract_backticks_content
+from config import Config
+
+
+def is_chart_related_query(query_str: str, chat_uuid: str) -> bool:
+    """
+    Check if the query is a chart related query
+
+    Args:
+        query_str (str): The query string
+        chat_uuid (str): The chat UUID
+    
+    Returns:
+        bool: True if the query is a chart related query, False otherwise
+    """
+
+    llm = OpenAI(model=Config.DEFAULT_OPENAI_MODEL)
+
+    chat_store = RedisChatStore(Config.REDIS_STORE_URL)
+    chat_memory = ChatMemoryBuffer.from_defaults(
+        chat_store=chat_store, chat_store_key=chat_uuid, token_limit=5000
+    )
+
+    chat_history = chat_memory.get()
+
+    prompt = (
+        "1. You are expert in analyzing user query and identifying if it requires generating a chart.\n"
+        "2. You will be provided with a user query along with the chat history.\n"
+        "3. You have to identify if the user query requires generating a chart.\n"
+        "4. You should output JSON with a key 'is_chart_related' and a boolean value.\n"
+        "5. The JSON should be enclosed in 3 backticks. \n"
+        "User Query:\n"
+        f"{query_str}\n"
+        "Response: \n"
+    )
+
+    chat_history.append(ChatMessage(role="user", content=prompt))
+    response = llm.chat(chat_history)
+
+    response = json.loads(extract_backticks_content(response, "json"))
+
+    is_chart_related = response.get("is_chart_related", False)
+
+    return is_chart_related

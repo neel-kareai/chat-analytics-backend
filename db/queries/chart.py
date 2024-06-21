@@ -57,3 +57,14 @@ class ChartQuery:
         db.delete(chart)
         db.flush()
         return True
+    
+    @staticmethod
+    def delete_chart_by_chat_uuid(db: Session, chat_uuid: UUID) -> bool:
+        charts = ChartQuery.get_chart_by_chat_uuid(db, chat_uuid)
+        if not charts:
+            return False
+
+        for chart in charts:
+            db.delete(chart)
+        db.flush()
+        return True

@@ -13,6 +13,8 @@ from helper.pipelines.db_query import db_config_pipeline
 from helper.pipelines.csv_query import csv_pipeline
 from helper.pipelines.excel_query import excel_pipeline
 from helper.pipelines.simple_chat import simple_chat_pipeline
+from helper.pipelines.chart_query import chart_query_pipeline
+from helper.pipelines.check_chart_query import is_chart_related_query
 import random, os
 
 
@@ -104,6 +106,41 @@ async def query(
             logger.error("Unauthorized access")
             response.status_code = status.HTTP_401_UNAUTHORIZED
             return APIResponseBase.unauthorized(message="Unauthorized access")
+
+        # check if the query is related to chart generation
+        check_chart_query = False
+        try:
+            check_chart_query = is_chart_related_query(request.query, str(request.chat_uuid))
+        except Exception as e:
+            logger.error(f"Failed to check chart query: {e}")
+            logger.info("Proceeding with normal document query")
+        
+        logger.debug(f"Is chart related query: {check_chart_query}")
+
+        if check_chart_query:
+            try:
+                result = chart_query_pipeline(
+                    request.query,
+                    str(request.chat_uuid),
+                    query_type,
+                    request.data_source_id,
+                    request.model,
+                )
+                return APIResponseBase.success_response(
+                    message="Query successful",
+                    data=CustomerQueryResponse(
+                        query=request.query,
+                        response=result,
+                        data_source_id=request.data_source_id,
+                        chat_uuid=str(request.chat_uuid),
+                    ),
+                )
+            except Exception as e:
+                logger.error(f"Failed to generate chart: {e}")
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return APIResponseBase.internal_server_error(
+                    message="Failed to query chart. Please check your query and try again."
+                )
 
         # download the file from s3
         s3_object_url = excel_file.document_url.split("amazonaws.com/")[-1]

@@ -15,6 +15,7 @@ from db import get_db
 from db.queries.user_documents import UserDocumentQuery
 from db.models.user_document import UserDocument
 from db.queries.chat_history import ChatHistoryQuery
+from db.queries.chart import ChartQuery
 from schemas.user_documents import UserDocumentUploadResponse, UserDocumentUpdateRequest
 from sqlalchemy.orm import Session
 from config import Config
@@ -323,7 +324,9 @@ def delete_csv_document(
         return APIResponseBase.internal_server_error(message="Failed to delete file")
     
     if chat_history:
+        ChartQuery.delete_chart_by_chat_uuid(db, str(chat_history.uuid))
         ChatHistoryQuery.delete_chat_history_by_uuid(db, chat_history.uuid)
+
     UserDocumentQuery.delete_user_document(db, document_id)
     db.commit()
 

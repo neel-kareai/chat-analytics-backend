@@ -32,7 +32,7 @@ class CustomerQueryResponse(BaseModel):
     """
 
     query: str
-    response: str
+    response: str | dict
     sql_query: Optional[str] = None
     data_source_id: Optional[int] = None
     chat_uuid: str

@@ -25,7 +25,10 @@ router = APIRouter(prefix="/chart", tags=["chart"])
 
 @router.get("/chat/{chat_uuid}")
 async def get_chart_by_chat_uuid(
-    chat_uuid: str, response: Response, db: Session = Depends(get_db)
+    chat_uuid: str,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: AccessTokenData = Depends(get_current_user),
 ) -> APIResponseBase:
     """
     Get the chart data for the given chat UUID.
@@ -53,7 +56,10 @@ async def get_chart_by_chat_uuid(
 
 @router.get("/{chart_uuid}")
 async def get_chart_by_uuid(
-    chart_uuid: str, response: Response, db: Session = Depends(get_db)
+    chart_uuid: str,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: AccessTokenData = Depends(get_current_user),
 ) -> APIResponseBase:
     """
     Get the chart data for the given chart UUID.

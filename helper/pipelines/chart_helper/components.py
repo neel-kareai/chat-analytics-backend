@@ -202,7 +202,22 @@ def chart_data_schema_tool(chart_type: Any) -> str:
             "required": ["name", "values"],
         },
     }
-    return f"{chart_schemas[chart_type_data]}"
+    return """
+    ```
+    [
+        {
+            "<LABEL>":"<VALUE: It should be a string>",
+            "<METRIC_NAME_1>":<VALUE: It should be a number>,
+            "<METRIC_NAME_2>":<VALUE: It should be a number>,
+        }, 
+        {
+            "<LABEL>":"<VALUE: It should be a string>",
+            "<METRIC_NAME_1>":<VALUE: It should be a number>,
+            "<METRIC_NAME_2>":<VALUE: It should be a number>,
+        }
+    ]
+    ```
+"""
 
 
 class ChartDataGeneratorViaPython(CustomQueryComponent):
@@ -423,7 +438,7 @@ class CaptionGenerator(CustomQueryComponent):
             chat_history,
             query_str,
         )
-        print("CaptionGenerator: ", prepared_context)
+        # print("CaptionGenerator: ", prepared_context)
         response = self.llm.chat(prepared_context)
 
         return {"caption": response}
