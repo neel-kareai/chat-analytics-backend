@@ -22,3 +22,15 @@ class Chart(Base):
     updated_at = Column(
         TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
+
+    def to_dict(self):
+        return {
+            "uuid": self.uuid,
+            "chat_uuid": self.chat_uuid,
+            "chart_type": self.chart_type,
+            "code": self.code,
+            "data": self.data,
+            "caption": self.caption,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
