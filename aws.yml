@@ -33,7 +33,7 @@ jobs:
       run: |
         echo "$EC2_SSH_KEY" > ec2_key.pem
         chmod 400 ec2_key.pem
-        scp -o StrictHostKeyChecking=no -i ec2_key.pem -r . $USERNAME@$HOST_DNS:$TARGET_DIR
+        scp -o StrictHostKeyChecking=no -i ec2_key.pem -r * $USERNAME@$HOST_DNS:$TARGET_DIR
 
     - name: Run deployment script on EC2
       env:
@@ -47,5 +47,5 @@ jobs:
           source venv/bin/activate
           pip install -r requirements.txt
           alembic upgrade head
-          uvicorn app:app --host 0.0.0.0 --port 8000
+          sudo systemctl restart myapp.service
         EOF

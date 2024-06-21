@@ -26,6 +26,7 @@ share/python-wheels/
 *.egg
 chat_bkd_venv/
 MANIFEST
+chat_bkd_venv/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
