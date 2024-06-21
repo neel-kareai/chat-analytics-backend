@@ -145,7 +145,7 @@ def excel_pipeline(
         "Query: {query_str}\n\n"
         "Pandas Instructions (optional):\n{pandas_instructions}\n\n"
         "Pandas Output: {pandas_output}\n\n"
-        "Your response should always be in HTML format inside a <div> tag.\n"
+        "Your response should always be in HTML format inside a <div> tag. Make sure to include any code within <code> tags.\n"
         "Response: "
     )
 

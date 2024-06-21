@@ -266,7 +266,7 @@ def db_config_pipeline(
         "\n"
         "{sql_result}"
         "\n"
-        "Combine the result for more readability. Your response should always be in HTML format inside a <div> tag.\n"
+        "Combine the result for more readability. Your response should always be in HTML format inside a <div> tag. Make sure to include any code within <code> tags.\n"
         "\n"
         "response:"
     )
