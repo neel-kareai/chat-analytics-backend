@@ -48,7 +48,7 @@ class DBConfigQuery:
                 DBConfig.created_at,
                 DBConfig.updated_at,
             )
-            .filter(DBConfig.customer_uuid == customer_uuid)
+            .filter(DBConfig.customer_uuid == customer_uuid, ChatHistory.query_type == "db")
             .join(ChatHistory, ChatHistory.data_source_id == DBConfig.id)
             .all()
         )

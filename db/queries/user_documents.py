@@ -92,7 +92,7 @@ class UserDocumentQuery:
                 ChatHistory.uuid.label("chat_uuid"),
             )
             .join(ChatHistory, ChatHistory.data_source_id == UserDocument.id)
-            .filter(UserDocument.customer_uuid == customer_uuid)
+            .filter(UserDocument.customer_uuid == customer_uuid, ChatHistory.query_type != "db")
             .all()
         )
         dict_data = [
