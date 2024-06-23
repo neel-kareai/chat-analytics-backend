@@ -22,6 +22,12 @@ class ChartQuery:
         data: Dict,
         caption: str,
     ) -> Chart:
+
+        for i in range(len(data)):
+            for key, value in data[i].items():
+                if key.lower() != "label" and not isinstance(value, float):
+                    data[i][key] = float(value)
+
         chart = Chart(
             chat_uuid=chat_uuid,
             chart_type=chart_type,
@@ -57,7 +63,7 @@ class ChartQuery:
         db.delete(chart)
         db.flush()
         return True
-    
+
     @staticmethod
     def delete_chart_by_chat_uuid(db: Session, chat_uuid: UUID) -> bool:
         charts = ChartQuery.get_chart_by_chat_uuid(db, chat_uuid)
