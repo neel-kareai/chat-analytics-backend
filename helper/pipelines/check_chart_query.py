@@ -31,9 +31,10 @@ def is_chart_related_query(query_str: str, chat_uuid: str) -> bool:
     prompt = (
         "1. You are expert in analyzing user query and identifying if it requires generating a chart.\n"
         "2. You will be provided with a user query along with the chat history.\n"
-        "3. You have to identify if the user query requires generating a chart.\n"
-        "4. You should output JSON with a key 'is_chart_related' and a boolean value.\n"
-        "5. The JSON should be enclosed in 3 backticks. \n"
+        "3. You have to identify if the user wants to generate chart or plots.\n"
+        "4. You should output 'false' if he user query is referencing previous charts and does not require generating a new chart.\n"
+        "5. You should output JSON with a key 'is_chart_related' and a boolean value.\n"
+        "6. The JSON should be enclosed in 3 backticks. \n"
         "User Query:\n"
         f"{query_str}\n"
         "Response: \n"

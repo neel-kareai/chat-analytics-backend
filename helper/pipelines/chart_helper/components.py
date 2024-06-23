@@ -68,7 +68,10 @@ class ChartTypeSelector(CustomQueryComponent):
 
         prepared_context = self._prepare_context(chat_history, query_str, data_schema)
         response = self.llm.chat(prepared_context)
-        return {"chart_type": response}
+        chart_type = json.loads(extract_backticks_content(response, "json"))[
+            "chart_type"
+        ]
+        return {"chart_type": chart_type}
 
     async def _arun_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run the component asynchronously."""
@@ -79,129 +82,17 @@ class ChartTypeSelector(CustomQueryComponent):
         prepared_context = self._prepare_context(chat_history, query_str, data_schema)
         response = await self.llm.achat(prepared_context)
 
-        return {"chart_type": response}
+        chart_type = json.loads(extract_backticks_content(response, "json"))[
+            "chart_type"
+        ]
+        return {"chart_type": chart_type}
 
 
-def chart_data_schema_tool(chart_type: Any) -> str:
-    chart_info = json.loads(extract_backticks_content(chart_type, "json"))
-    print(chart_info)
-    chart_type_data = chart_info["chart_type"]
-    chart_schemas = {}
-    chart_schemas["bar"] = {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Generalized Bar Chart Data Schema",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "The label or name for the data point",
-                },
-                "values": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "number",
-                        "description": "A numerical value for a specific metric",
-                    },
-                    "description": "A set of key-value pairs where the key is the metric name and the value is the numerical data",
-                },
-            },
-            "required": ["name", "values"],
-        },
-    }
-    chart_schemas["area"] = {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Generalized Area Chart Data Schema",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "The label or name for the data point",
-                },
-                "values": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "number",
-                        "description": "A numerical value for a specific metric",
-                    },
-                    "description": "A set of key-value pairs where the key is the metric name and the value is the numerical data",
-                },
-            },
-            "required": ["name", "values"],
-        },
-    }
-    chart_schemas["line"] = {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Generalized Line Chart Data Schema",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "The label or name for the data point",
-                },
-                "values": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "number",
-                        "description": "A numerical value for a specific metric",
-                    },
-                    "description": "A set of key-value pairs where the key is the metric name and the value is the numerical data",
-                },
-            },
-            "required": ["name", "values"],
-        },
-    }
-    chart_schemas["radar"] = {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Generalized Radar Chart Data Schema",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "The label or name for the data point",
-                },
-                "values": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "number",
-                        "description": "A numerical value for a specific metric",
-                    },
-                    "description": "A set of key-value pairs where the key is the metric name and the value is the numerical data",
-                },
-            },
-            "required": ["name", "values"],
-        },
-    }
-    chart_schemas["pie"] = {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Generalized Pie Chart Data Schema",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "The label or name for the data point",
-                },
-                "values": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "number",
-                        "description": "A numerical value for a specific metric",
-                    },
-                    "description": "A set of key-value pairs where the key is the metric name and the value is the numerical data",
-                },
-            },
-            "required": ["name", "values"],
-        },
-    }
+def chart_data_schema_tool(chart_type: str) -> str:
+    print("Chart type : ", chart_type)
+    if chart_type not in ["bar", "area", "line", "pie", "radar"]:
+        raise Exception(f"Invalid chart_type : '{chart_type}'")
+
     return """
     ```
     [
@@ -282,8 +173,8 @@ class ChartDataGeneratorViaPython(CustomQueryComponent):
         chart_schema = kwargs["chart_schema"]
         data_schema = kwargs["data_schema"]
 
-        chart_type = extract_backticks_content(chart_type, "json")
-        chart_type = json.loads(chart_type)["chart_type"]
+        # chart_type = extract_backticks_content(chart_type, "json")
+        # chart_type = json.loads(chart_type)["chart_type"]
 
         prepared_context = self._prepare_context(
             chat_history, query_str, chart_type, chart_schema, data_schema
@@ -300,8 +191,8 @@ class ChartDataGeneratorViaPython(CustomQueryComponent):
         chart_schema = kwargs["chart_schema"]
         data_schema = kwargs["data_schema"]
 
-        chart_type = extract_backticks_content(chart_type, "json")
-        chart_type = json.loads(chart_type)["chart_type"]
+        # chart_type = extract_backticks_content(chart_type, "json")
+        # chart_type = json.loads(chart_type)["chart_type"]
 
         prepared_context = self._prepare_context(
             chat_history, query_str, chart_type, chart_schema, data_schema
@@ -312,7 +203,8 @@ class ChartDataGeneratorViaPython(CustomQueryComponent):
 
 
 class ChartDataCodeExecutor(CustomQueryComponent):
-    df: Any = Field(..., description="The dataframe variable")
+    df: Optional[Any] = None
+    conn: Optional[Any] = None
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -330,7 +222,12 @@ class ChartDataCodeExecutor(CustomQueryComponent):
     def _run_component(self, **kwargs) -> Dict[str, Any]:
         """Run the component."""
         python_code = kwargs["python_code"]
-        global_dict = {"df": self.df}
+        if self.df is not None:
+            global_dict = {"df": self.df}
+        else:
+            global_dict = {"conn": self.conn}
+        print("global_dict: ", global_dict)
+        print(extract_backticks_content(python_code, "python"))
         exec(extract_backticks_content(python_code, "python"), global_dict)
 
         response = global_dict["chart_data"]
@@ -340,7 +237,11 @@ class ChartDataCodeExecutor(CustomQueryComponent):
     async def _arun_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run the component asynchronously."""
         python_code = kwargs["python_code"]
-        global_dict = {"df": self.df}
+        if self.df is not None:
+            global_dict = {"df": self.df}
+        else:
+            global_dict = {"conn": self.conn}
+
         exec(extract_backticks_content(python_code, "python"), global_dict)
 
         response = global_dict["chart_data"]
@@ -348,10 +249,8 @@ class ChartDataCodeExecutor(CustomQueryComponent):
         return {"chart_data": response}
 
 
-def chart_validator_tool(chart_data: dict, chart_type: Any) -> dict:
-    chart_info = json.loads(extract_backticks_content(chart_type, "json"))
-    print(chart_info)
-    chart_type_data = chart_info["chart_type"]
+def chart_validator_tool(chart_data: dict, chart_type: str) -> dict:
+    chart_type_data = chart_type
 
     if chart_type_data == "bar":
         try:

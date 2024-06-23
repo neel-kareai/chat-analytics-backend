@@ -23,13 +23,16 @@ from helper.pipelines.chart_helper.components import (
     chart_validator_tool,
 )
 from db.queries.user_documents import UserDocumentQuery
+from db.queries.db_config import DBConfigQuery
 from db.queries.chart import ChartQuery
 from db import get_db
 from helper.aws_s3 import download_from_s3
 from helper.pipelines.chart_helper import extract_backticks_content
 from helper.pipelines.excel_query import get_excel_schema
+from helper.pipelines.db_query import get_db_connection_string, get_db_schema
 from config import Config
 from logger import logger
+from sqlalchemy import create_engine
 
 
 def chart_query_pipeline(
@@ -43,27 +46,40 @@ def chart_query_pipeline(
     Query pipeline for chart queries
     """
 
-    if query_type not in ["csv", "excel"]:
+    if query_type not in ["csv", "excel", "db"]:
         raise ValueError("Invalid query type")
 
     db = next(get_db())
-    user_doc = UserDocumentQuery.get_user_document_by_id(db, data_source_id)
-    if not user_doc:
-        raise ValueError("Invalid data source id")
+    if query_type in ["csv", "excel"]:
+        user_doc = UserDocumentQuery.get_user_document_by_id(db, data_source_id)
+        if not user_doc:
+            raise ValueError("Invalid data source id")
 
-    file_s3_url = user_doc.document_url
-    object_url = file_s3_url.split("amazonaws.com/")[-1]
-    file_extension = object_url.split(".")[-1]
-    file_name = random.randbytes(10).hex() + "." + file_extension
-    temp_file_path = f"/tmp/{file_name}"
+        file_s3_url = user_doc.document_url
+        object_url = file_s3_url.split("amazonaws.com/")[-1]
+        file_extension = object_url.split(".")[-1]
+        file_name = random.randbytes(10).hex() + "." + file_extension
+        temp_file_path = f"/tmp/{file_name}"
 
-    if not download_from_s3(object_url, temp_file_path):
-        raise Exception("Failed to download the file from s3")
+        if not download_from_s3(object_url, temp_file_path):
+            raise Exception("Failed to download the file from s3")
 
-    if file_extension == "csv":
-        df = pd.read_csv(temp_file_path)
+        if file_extension == "csv":
+            df = pd.read_csv(temp_file_path)
+        else:
+            df = pd.read_excel(temp_file_path, sheet_name=None)
     else:
-        df = pd.read_excel(temp_file_path, sheet_name=None)
+        db_instance = DBConfigQuery.get_db_config_by_id(db, data_source_id)
+        db_url = get_db_connection_string(
+            db_type=db_instance.db_type,
+            db_user=db_instance.db_config["user"],
+            db_password=db_instance.db_config["password"],
+            db_host=db_instance.db_config["hostname"],
+            db_port=db_instance.db_config["port"],
+            db_name=db_instance.db_config["dbname"],
+        )
+        data_schema = get_db_schema(db_url=db_url)
+        user_db_conn = create_engine(db_url)
 
     chat_store = RedisChatStore(Config.REDIS_STORE_URL)
     chat_memory = ChatMemoryBuffer.from_defaults(
@@ -90,46 +106,77 @@ def chart_query_pipeline(
             '5. Makes sure to have the following output schema: {"chart_type":"<The best chart type which fits on the user query>"}\n'
             "6. You should enclose JSON within 3 backticks.\n"
             f"7. The current timestamp is {datetime.utcnow()}.\n"
-        )
+        ),
     )
     chart_data_schema_tool_component = FunctionComponent(
         fn=chart_data_schema_tool, output_key="chart_schema"
     )
-    chart_data_generator_component = ChartDataGeneratorViaPython(
-        llm=llm,
-        context_prompt=(
-            "INSTRUCTIONS:\n"
-            "- You are a expert developer in python and data science\n"
-            "- Your task to convert the user query into the schema below:- \n"
-            "List Schema of `chart_data` variable: \n"
-            "{chart_schema}\n"
-            "1. Each element of the list should be a dictionary.\n"
-            "2. Each dictionary should have a key `label`  and its value should be a string. It should be named according to the X-axis of the chart.\n"
-            "3. Each and every other key should be the name of the metric and its decimal value.\n"
-            "- The code should be generated in such a way it can executed using python's in-built `exec()` function.\n"
-            "- You should not use print statement or matplotlib/seaborne module.\n"
-            "- You should store the final chart data into `chart_data` variable so that it can be captured after `exec()` call.\n"
-            "- You are only allowed to use 'pandas' library and the name of the dataframe is `df`. Its context will be provided later through `exec()`.\n"
-            "- You should output the Python code enclosed in 3 backticks.\n"
-            f"- The current timestamp is {datetime.utcnow()}.\n"
-            "- Since this is excel dataframe, Always use the sheet name to access the individual sheet data. For example, `df['Sheet1']`.\n" if file_extension != "csv" else ""
-            "User Query: \n"
-            "{query_str}\n"
-            "`df.head()` Output: \n"
-            "{data_schema}\n"
-            "Chart Type: {chart_type}\n"
-            "Python code:\n"
-        ),
-        system_prompt=(
-            "INSTRUCTIONS:\n"
-            "- You are a expert developer in python and data science\n"
-            "- Your task to write a python code which generate a list stictly according to user query and schema below:- \n"
-            "1. Each element of the list should be a dictionary.\n"
-            "2. Each dictionary should have a key `label`  and its value should be a string. It should be named according to the X-axis of the chart.\n"
-            "3. Each and every other key should be the name of the metric and its decimal value.\n"
-        )  
-    )
-    chart_data_code_executor_component = ChartDataCodeExecutor(df=df)
+    if query_type in ["csv", "excel"]:
+        extra_excel_instructions = (
+            "Always use the sheet name to access individual sheet data, for example, `df['Sheet1']`"
+            if query_type == "excel"
+            else ""
+        )
+        chart_data_generator_component = ChartDataGeneratorViaPython(
+            llm=llm,
+            context_prompt=(
+                "INSTRUCTIONS:\n"
+                "- You are an expert developer in Python and data science.\n"
+                "- Your task is to convert the user query into Python code that generates a data structure following the schema below. This code will be executed using the `exec()` function.\n"
+                "List Schema of `chart_data` variable:"
+                "{chart_schema}\n"
+                "1. Each element of the list should be a dictionary.\n"
+                "2. Each dictionary should have a key `label` with a string value, named according to the X-axis of the chart.\n"
+                "3. Each dictionary should include other keys representing metric names with their decimal values.\n"
+                "- The generated code must be executable using Python's built-in `exec()` function\n"
+                "- Do not use `print` statements or the `matplotlib`/`seaborn` modules.\n"
+                "- Store the final chart data in the `chart_data` variable to capture it after the `exec()` call.\n"
+                "- You are only allowed to use the 'pandas' library, and the dataframe is named `df`. Context will be provided later through `exec()`. \n"
+                "- Output the Python code enclosed in triple backticks (```).\n"
+                f"{extra_excel_instructions}\n\n"
+                "Details:\n"
+                f"- Current timestamp: {datetime.utcnow()}\n"
+                "- User Query: \n"
+                "{query_str}\n"
+                "- Dataframe Schema: \n"
+                "{data_schema}\n"
+                "- Chart Type: {chart_type}\n\n"
+                "Python code:\n"
+            ),
+            system_prompt=None,
+        )
+    else:
+        chart_data_generator_component = ChartDataGeneratorViaPython(
+            llm=llm,
+            context_prompt=(
+                "INSTRUCTIONS:\n"
+                "- You are a expert developer in python and data science\n"
+                "- Your task to convert the user query into the schema below:- \n"
+                "List Schema of `chart_data` variable: \n"
+                "{chart_schema}\n"
+                "1. Each element of the list should be a dictionary.\n"
+                "2. Each dictionary should have a key `label`  and its value should be a string. It should be named according to the X-axis of the chart.\n"
+                "3. Each and every other key should be the name of the metric and its decimal value.\n"
+                "- The code should be generated in such a way it can executed using python's in-built `exec()` function.\n"
+                "- You should not use print statement or matplotlib/seaborne module.\n"
+                "- You should store the final chart data into `chart_data` variable so that it can be captured after `exec()` call.\n"
+                "- You are allowed to use pandas and name of the sqlalchemy connection is `conn`. Its context will be provided later through `exec()`. \n"
+                "- You should output the Python code enclosed in 3 backticks.\n"
+                f"- The current timestamp is {datetime.utcnow()}.\n"
+                "User Query: \n"
+                "{query_str}\n"
+                "Database Schema: \n"
+                "{data_schema}\n"
+                "Chart Type: {chart_type}\n"
+                "Python code:\n"
+            ),
+            system_prompt=None,
+        )
+
+    if query_type in ["csv", "excel"]:
+        chart_data_code_executor_component = ChartDataCodeExecutor(df=df)
+    else:
+        chart_data_code_executor_component = ChartDataCodeExecutor(conn=user_db_conn)
     chart_validator_tool_component = FunctionComponent(
         fn=chart_validator_tool, output_key="validated_chart_data"
     )
@@ -259,22 +306,29 @@ def chart_query_pipeline(
         dest_key="validated_chart_data",
     )
 
-    if file_extension == "csv":
+    if query_type == "csv":
         result, intermediates = p.run_with_intermediates(
             query_str=query_str, chat_history=chat_history, data_schema=f"{df.head()}"
         )
+    elif query_type == "excel":
+        result, intermediates = p.run_with_intermediates(
+            query_str=query_str,
+            chat_history=chat_history,
+            data_schema=get_excel_schema(temp_file_path),
+        )
     else:
         result, intermediates = p.run_with_intermediates(
-            query_str=query_str, chat_history=chat_history, data_schema=get_excel_schema(temp_file_path)
+            query_str=query_str,
+            chat_history=chat_history,
+            data_schema=data_schema,
+            conn=user_db_conn,
         )
 
-    os.remove(temp_file_path)
+    if query_type in ["csv", "excel"]:
+        os.remove(temp_file_path)
 
-    chart_type_info = json.loads(
-        extract_backticks_content(
-            intermediates["chart_type_selector_component"].outputs["chart_type"], "json"
-        )
-    )
+    chart_type_info = intermediates["chart_type_selector_component"].outputs["chart_type"]
+
     python_code = extract_backticks_content(
         intermediates["chart_data_generator_component"].outputs["python_code"], "python"
     )
@@ -295,7 +349,7 @@ def chart_query_pipeline(
     chart = ChartQuery.create_chart(
         db,
         chat_uuid=chat_uuid,
-        chart_type=chart_type_info["chart_type"],
+        chart_type=chart_type_info,
         code=python_code,
         data=chart_data,
         caption=caption_info["caption"],
@@ -307,7 +361,11 @@ def chart_query_pipeline(
     response_message = ChatMessage(
         role="assistant",
         content=result.message.content,
-        chart_uuid={"chart_uuid": str(chart.uuid)},
+        additional_kwargs={
+            "chart_uuid": str(chart.uuid),
+            "chart_type": chart.chart_type,
+            "chart_data": chart.data,
+        },
     )
     chat_memory.put(response_message)
 

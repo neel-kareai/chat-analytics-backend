@@ -173,6 +173,42 @@ async def query(
         if str(db_config.customer_uuid) != current_user.uuid:
             logger.error("Unauthorized access")
             return APIResponseBase.unauthorized(message="Unauthorized access")
+        
+        # check if the query is related to chart generation
+        check_chart_query = False
+        try:
+            check_chart_query = is_chart_related_query(request.query, str(request.chat_uuid))
+        except Exception as e:
+            logger.error(f"Failed to check chart query: {e}")
+            logger.info("Proceeding with normal document query")
+        
+        logger.debug(f"Is chart related query: {check_chart_query}")
+
+        if check_chart_query:
+            try:
+                result = chart_query_pipeline(
+                    request.query,
+                    str(request.chat_uuid),
+                    query_type,
+                    request.data_source_id,
+                    request.model,
+                )
+                return APIResponseBase.success_response(
+                    message="Query successful",
+                    data=CustomerQueryResponse(
+                        query=request.query,
+                        response=result,
+                        data_source_id=request.data_source_id,
+                        chat_uuid=str(request.chat_uuid),
+                    ),
+                )
+            except Exception as e:
+                logger.error(f"Failed to generate chart: {e}")
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return APIResponseBase.internal_server_error(
+                    message="Failed to query chart. Please check your query and try again."
+                )
+
         try:
             result, sql_query = db_config_pipeline(
                 db_config.db_type,
