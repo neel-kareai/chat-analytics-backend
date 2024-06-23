@@ -113,9 +113,9 @@ def chart_query_pipeline(
     )
     if query_type in ["csv", "excel"]:
         extra_excel_instructions = (
-            "Always use the sheet name to access individual sheet data, for example, `df['Sheet1']`"
+            "Always use the sheet name to access individual sheet data, for example, `df['Sheet1']`. It is already loaded using `df = pd.read_excel(temp_file_path, sheet_name=None)`"
             if query_type == "excel"
-            else ""
+            else "" 
         )
         chart_data_generator_component = ChartDataGeneratorViaPython(
             llm=llm,
@@ -131,7 +131,7 @@ def chart_query_pipeline(
                 "- The generated code must be executable using Python's built-in `exec()` function\n"
                 "- Do not use `print` statements or the `matplotlib`/`seaborn` modules.\n"
                 "- Store the final chart data in the `chart_data` variable to capture it after the `exec()` call.\n"
-                "- You are only allowed to use the 'pandas' library, and the dataframe is named `df`. Context will be provided later through `exec()`. \n"
+                "- You are only allowed to use the 'pandas' library, and the dataframe named `df` is already loaded. `df` Context will be provided later through `exec()`. \n"
                 "- Output the Python code enclosed in triple backticks (```).\n"
                 f"{extra_excel_instructions}\n\n"
                 "Details:\n"
