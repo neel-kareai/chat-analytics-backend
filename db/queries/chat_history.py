@@ -89,6 +89,7 @@ class ChatHistoryQuery:
             {
                 "role": chat_message.role,
                 "content": post_processed_html_response(chat_message.content),
+                "extra": chat_message.additional_kwargs or {}
             }
             for chat_message in chat_messages
         ]
