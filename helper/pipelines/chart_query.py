@@ -115,7 +115,7 @@ def chart_query_pipeline(
         extra_excel_instructions = (
             "Always use the sheet name to access individual sheet data, for example, `df['Sheet1']`. It is already loaded using `df = pd.read_excel(temp_file_path, sheet_name=None)`"
             if query_type == "excel"
-            else "" 
+            else ""
         )
         chart_data_generator_component = ChartDataGeneratorViaPython(
             llm=llm,
@@ -128,10 +128,12 @@ def chart_query_pipeline(
                 "1. Each element of the list should be a dictionary.\n"
                 "2. Each dictionary should have a key `label` with a string value, named according to the X-axis of the chart.\n"
                 "3. Each dictionary should include other keys representing metric names with their decimal values.\n"
+                "4. The size of the list should not exceed 16 elements unless explicitly mentioned in the user query.\n"
                 "- The generated code must be executable using Python's built-in `exec()` function\n"
                 "- Do not use `print` statements or the `matplotlib`/`seaborn` modules.\n"
                 "- Store the final chart data in the `chart_data` variable to capture it after the `exec()` call.\n"
                 "- You are only allowed to use the 'pandas' library, and the dataframe named `df` is already loaded. `df` Context will be provided later through `exec()`. \n"
+                "- "
                 "- Output the Python code enclosed in triple backticks (```).\n"
                 f"{extra_excel_instructions}\n\n"
                 "Details:\n"
@@ -157,6 +159,7 @@ def chart_query_pipeline(
                 "1. Each element of the list should be a dictionary.\n"
                 "2. Each dictionary should have a key `label`  and its value should be a string. It should be named according to the X-axis of the chart.\n"
                 "3. Each and every other key should be the name of the metric and its decimal value.\n"
+                "4. The size of the list should not exceed 16 elements unless explicitly mentioned in the user query.\n"
                 "- The code should be generated in such a way it can executed using python's in-built `exec()` function.\n"
                 "- You should not use print statement or matplotlib/seaborne module.\n"
                 "- You should store the final chart data into `chart_data` variable so that it can be captured after `exec()` call.\n"
@@ -327,7 +330,9 @@ def chart_query_pipeline(
     if query_type in ["csv", "excel"]:
         os.remove(temp_file_path)
 
-    chart_type_info = intermediates["chart_type_selector_component"].outputs["chart_type"]
+    chart_type_info = intermediates["chart_type_selector_component"].outputs[
+        "chart_type"
+    ]
 
     python_code = extract_backticks_content(
         intermediates["chart_data_generator_component"].outputs["python_code"], "python"
