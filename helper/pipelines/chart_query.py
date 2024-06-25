@@ -92,6 +92,12 @@ def chart_query_pipeline(
     chart_type_selector_component = ChartTypeSelector(
         llm=llm,
         context_prompt=(
+            "1. Your task is to analyze user query and given data schema.\n"
+            "2. You need to pick the best chart type which can be used for the given user query.\n"
+            "3. Only following chart types are allowed: 'area', 'bar', 'line', 'pie', 'radar'.\n"
+            "4. You must output a JSON with a key 'chart_type' with the value of best chart which fits on the user query."
+            '5. Makes sure to have the following output schema: {"chart_type":"<The best chart type which fits on the user query>"}\n'
+            "6. You should enclose JSON within 3 backticks.\n"
             "Data Schema:\n"
             "{data_schema}\n"
             "User Query:\n"
@@ -129,6 +135,7 @@ def chart_query_pipeline(
                 "2. Each dictionary should have a key `label` with a string value, named according to the X-axis of the chart.\n"
                 "3. Each dictionary should include other keys representing metric names with their decimal values.\n"
                 "4. The size of the list should not exceed 7 elements unless explicitly mentioned in the user query.\n"
+                "5. Do not include any dummy metric names or values.\n"
                 "- The generated code must be executable using Python's built-in `exec()` function\n"
                 "- Do not use `print` statements or the `matplotlib`/`seaborn` modules.\n"
                 "- Store the final chart data in the `chart_data` variable to capture it after the `exec()` call.\n"
