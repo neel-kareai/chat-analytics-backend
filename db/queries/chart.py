@@ -2,6 +2,7 @@ from db.models.chart import Chart
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import Dict, List
+import math
 
 
 class ChartQuery:
@@ -26,7 +27,11 @@ class ChartQuery:
         for i in range(len(data)):
             for key, value in data[i].items():
                 if key.lower() != "label" and not isinstance(value, float):
-                    data[i][key] = float(value)
+                    # check for NaN values
+                    if math.isnan(value):
+                        data[i][key] = 0
+                    else:
+                        data[i][key] = round(value, 2)
 
         chart = Chart(
             chat_uuid=chat_uuid,
