@@ -79,7 +79,7 @@ class ChatHistoryQuery:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Chat history NOT found",
             )
-        chat_store = RedisChatStore(redis_url=Config.REDIS_STORE_URL, ttl=300)
+        chat_store = RedisChatStore(redis_url=Config.REDIS_STORE_URL)
         chat_memory_buffer = ChatMemoryBuffer.from_defaults(
             chat_store=chat_store, chat_store_key=chat_uuid, token_limit=5000
         )
