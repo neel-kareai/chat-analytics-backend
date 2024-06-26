@@ -209,7 +209,7 @@ def db_config_pipeline(
     db_config: dict,
     query: str,
     chat_uuid: str,
-    model: str = Config.DEFAULT_OPENAI_MODEL,
+    model: str = Config.DEFAULT_LLM_MODEL,
 ) -> str:
     """
     Executes a database query pipeline.
@@ -218,7 +218,7 @@ def db_config_pipeline(
         db_type (str): The type of the database.
         db_config (dict): The configuration details for the database.
         query (str): The query to be executed.
-        model (str, optional): The OpenAI model to be used for query generation. Defaults to Config.DEFAULT_OPENAI_MODEL.
+        model (str, optional): The OpenAI model to be used for query generation. Defaults to Config.DEFAULT_LLM_MODEL.
 
     Returns:
         tuple: A tuple containing the refined query result and the generated SQL query.
@@ -252,7 +252,9 @@ def db_config_pipeline(
             {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. You have to write sql query enclosed in triple backticks.
             """,
     )
-    extract_sql_query_intermediate = FnComponent(fn=extract_sql_query, output_key="sql_query")
+    extract_sql_query_intermediate = FnComponent(
+        fn=extract_sql_query, output_key="sql_query"
+    )
     sql_result_tool = FnComponent(fn=run_sql_query, output_key="sql_result")
     refine_query_result_temp = (
         "You are a data analyst and database expert bot. You have been given a task to "

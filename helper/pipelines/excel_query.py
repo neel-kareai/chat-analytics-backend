@@ -90,6 +90,7 @@ class PandasResponseWithChatHistory(CustomQueryComponent):
 
         return {"response": response}
 
+
 def get_excel_schema(excel_path: str) -> str:
     # get the head of each sheet present in the excel file and combine it
     # beautifully to form a schema
@@ -99,14 +100,15 @@ def get_excel_schema(excel_path: str) -> str:
         schema += f"Sheet Name: '{sheet}'\n"
         schema += "-" * 50 + "\n"
         schema += f"{df[sheet].head()}\n\n"
-    
+
     return schema
 
+
 def excel_pipeline(
-        excel_path: str,
-        customer_query: str,
-        chat_uuid: str,
-        model: str = Config.DEFAULT_OPENAI_MODEL,
+    excel_path: str,
+    customer_query: str,
+    chat_uuid: str,
+    model: str = Config.DEFAULT_LLM_MODEL,
 ):
 
     logger.debug(f"Querying Excel file: {excel_path}")
@@ -170,13 +172,17 @@ def excel_pipeline(
     )
 
     qp.add_link("input", "pandas_prompt", src_key="query_str", dest_key="query_str")
-    qp.add_link("input", "pandas_response", src_key="chat_history", dest_key="chat_history")
+    qp.add_link(
+        "input", "pandas_response", src_key="chat_history", dest_key="chat_history"
+    )
     qp.add_link("pandas_prompt", "pandas_response", dest_key="query_str")
     qp.add_link("pandas_response", "pandas_output_parser")
     qp.add_link(
         "pandas_output_parser", "response_synthesis_prompt", dest_key="pandas_output"
     )
-    qp.add_link("pandas_response", "response_synthesis_prompt", dest_key="pandas_instructions")
+    qp.add_link(
+        "pandas_response", "response_synthesis_prompt", dest_key="pandas_instructions"
+    )
     qp.add_link(
         "input", "response_synthesis_prompt", src_key="query_str", dest_key="query_str"
     )

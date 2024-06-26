@@ -11,12 +11,12 @@ class CustomerQueryRequest(BaseModel):
     Attributes:
         query (str): The query string.
         data_source_id (Optional[int]): The ID of the data source (default: None).
-        model (str): The OpenAI model to use (default: Config.DEFAULT_OPENAI_MODEL).
+        model (str): The OpenAI model to use (default: Config.DEFAULT_LLM_MODEL).
     """
 
     query: str
     data_source_id: Optional[int] = None
-    model: str = Config.DEFAULT_OPENAI_MODEL
+    model: str = Config.DEFAULT_LLM_MODEL
     chat_uuid: Optional[UUID] = None
 
 

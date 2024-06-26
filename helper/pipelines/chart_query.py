@@ -40,7 +40,7 @@ def chart_query_pipeline(
     chat_uuid: str,
     query_type: str,
     data_source_id: int,
-    model: str = Config.DEFAULT_OPENAI_MODEL,
+    model: str = Config.DEFAULT_LLM_MODEL,
 ) -> Dict[str, Any]:
     """
     Query pipeline for chart queries

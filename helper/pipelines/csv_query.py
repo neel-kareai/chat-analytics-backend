@@ -109,8 +109,8 @@ def csv_pipeline(embedding_path: str, customer_query: str) -> str:
     try:
         logger.debug(f"Querying csv: {embedding_path}")
         db = chromadb.PersistentClient(path=Config.CHROMA_DB_PATH)
-        embed_model = OpenAIEmbedding(model=Config.DEFAULT_OPENAI_EMBEDDING_MODEL)
-        llm = OpenAI(model=Config.DEFAULT_OPENAI_MODEL)
+        embed_model = OpenAIEmbedding(model=Config.DEFAULT_EMBEDDING_MODEL)
+        llm = OpenAI(model=Config.DEFAULT_LLM_MODEL)
         chroma_collection = db.get_or_create_collection(embedding_path)
 
         vector_store = ChromaVectorStore(
@@ -137,7 +137,7 @@ def csv_pipeline_v2(
     csv_path: str,
     customer_query: str,
     chat_uuid: str,
-    model: str = Config.DEFAULT_OPENAI_MODEL,
+    model: str = Config.DEFAULT_LLM_MODEL,
 ) -> str:
     """
     Query the csv file using the query pipeline.
@@ -145,7 +145,7 @@ def csv_pipeline_v2(
     Args:
         csv_path (str): The path to the csv file.
         customer_query (str): The query to be executed.
-        model (str, optional): The OpenAI model to be used. Defaults to Config.DEFAULT_OPENAI_MODEL.
+        model (str, optional): The OpenAI model to be used. Defaults to Config.DEFAULT_LLM_MODEL.
 
     Returns:
         str: The response from the query.
@@ -209,13 +209,17 @@ def csv_pipeline_v2(
     )
 
     qp.add_link("input", "pandas_prompt", src_key="query_str", dest_key="query_str")
-    qp.add_link("input", "pandas_response", src_key="chat_history", dest_key="chat_history")
+    qp.add_link(
+        "input", "pandas_response", src_key="chat_history", dest_key="chat_history"
+    )
     qp.add_link("pandas_prompt", "pandas_response", dest_key="query_str")
     qp.add_link("pandas_response", "pandas_output_parser")
     qp.add_link(
         "pandas_output_parser", "response_synthesis_prompt", dest_key="pandas_output"
     )
-    qp.add_link("pandas_response", "response_synthesis_prompt", dest_key="pandas_instructions")
+    qp.add_link(
+        "pandas_response", "response_synthesis_prompt", dest_key="pandas_instructions"
+    )
     qp.add_link(
         "input", "response_synthesis_prompt", src_key="query_str", dest_key="query_str"
     )

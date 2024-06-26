@@ -26,7 +26,7 @@ def create_document_embedding(
     """
 
     try:
-        openai_embedding = OpenAIEmbedding(model=Config.DEFAULT_OPENAI_EMBEDDING_MODEL)
+        openai_embedding = OpenAIEmbedding(model=Config.DEFAULT_EMBEDDING_MODEL)
         doc = SimpleDirectoryReader(
             input_files=[document_path],
         ).load_data()
@@ -63,7 +63,7 @@ def openai_chat_completion_with_retry(
     user_prompt: str,
     temperature: float = 0.0,
     top_p: float = 0.2,
-    model: str = Config.DEFAULT_OPENAI_MODEL,
+    model: str = Config.DEFAULT_LLM_MODEL,
     max_retries: int = 3,
     retry_interval: int = 5,
 ) -> str:

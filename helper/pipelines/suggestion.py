@@ -177,7 +177,7 @@ def suggestion_pipeline(
     response_text = openai_chat_completion_with_retry(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
-        model=Config.DEFAULT_OPENAI_MODEL,
+        model=Config.DEFAULT_LLM_MODEL,
     )
     logger.debug(f"OpenAI response: {response_text}")
     suggestions = extract_json(response_text)

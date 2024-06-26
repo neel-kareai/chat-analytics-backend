@@ -14,12 +14,12 @@ def is_chart_related_query(query_str: str, chat_uuid: str) -> bool:
     Args:
         query_str (str): The query string
         chat_uuid (str): The chat UUID
-    
+
     Returns:
         bool: True if the query is a chart related query, False otherwise
     """
 
-    llm = OpenAI(model=Config.DEFAULT_OPENAI_MODEL)
+    llm = OpenAI(model=Config.DEFAULT_LLM_MODEL)
 
     chat_store = RedisChatStore(Config.REDIS_STORE_URL)
     chat_memory = ChatMemoryBuffer.from_defaults(
