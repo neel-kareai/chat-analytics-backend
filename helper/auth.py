@@ -1,17 +1,17 @@
 import jwt
 import datetime
-from typing import Optional
+from typing import Optional, Annotated, Any
 from pydantic import BaseModel
 from config import Config
 from fastapi.security import OAuth2PasswordBearer
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends, Query
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="customer/login")
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str):
     """
-    Get the current user based on the provided access token.
+    Get the current user based on the provided access token from query parameters.
 
     Args:
         token (str): The access token.
@@ -36,6 +36,7 @@ class AccessTokenData(BaseModel):
     """
     Represents the data contained in an access token.
     """
+
     uuid: str
     email: str
     name: str
@@ -45,6 +46,7 @@ class RefreshTokenData(BaseModel):
     """
     Represents the data contained in a refresh token.
     """
+
     uuid: str
 
 
@@ -52,6 +54,7 @@ class JWTHandler:
     """
     Helper class for handling JWT tokens.
     """
+
     SECRET_KEY = Config.JWT_SECRET_KEY
     ALGORITHM = Config.JWT_ALGORITHM
 
