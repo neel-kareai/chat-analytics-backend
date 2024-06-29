@@ -9,7 +9,7 @@ from fastapi import HTTPException, status, Depends
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="customer/login")
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str):
     """
     Get the current user based on the provided access token.
 
