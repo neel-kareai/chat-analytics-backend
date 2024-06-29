@@ -184,7 +184,7 @@ def csv_pipeline_v2(
         "Query: {query_str}\n\n"
         "Pandas Instructions (optional):\n{pandas_instructions}\n\n"
         "Pandas Output: {pandas_output}\n\n"
-        "Your response should always be in HTML format inside a <div> tag.Make sure to include any inline code with <pre> tag and multiline code within <code> tag.\n"
+        "Your response should always be in HTML format inside a <div> tag. Make sure to include any inline code within <b> tag and multiline code within <code> tag. You should only include code if explicitly requested by the user as user may not be familiar with code.\n"
         "Response: "
     )
 

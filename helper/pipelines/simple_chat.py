@@ -110,7 +110,8 @@ def simple_chat_pipeline(
         system_prompt="""
             You are an assistance with data analyst and database expertise. You should
             answer the customer query and be helpful. Your response should always be in HTML 
-            format inside a <div> tag. Make sure to include any inline code with <pre> tag and multiline code within <code> tag.
+            format inside a <div> tag. Make sure to include any inline code within <b> tag and multiline code within <code> tag.
+            You should only include code if explicitly requested by the user as user may not be familiar with code.
             """,
     )
     input_component = InputComponent()

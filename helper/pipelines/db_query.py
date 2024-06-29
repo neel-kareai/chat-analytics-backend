@@ -252,7 +252,9 @@ def db_config_pipeline(
             {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. You have to write sql query enclosed in triple backticks.
             """,
     )
-    extract_sql_query_intermediate = FnComponent(fn=extract_sql_query, output_key="sql_query")
+    extract_sql_query_intermediate = FnComponent(
+        fn=extract_sql_query, output_key="sql_query"
+    )
     sql_result_tool = FnComponent(fn=run_sql_query, output_key="sql_result")
     refine_query_result_temp = (
         "You are a data analyst and database expert bot. You have been given a task to "
@@ -266,7 +268,7 @@ def db_config_pipeline(
         "\n"
         "{sql_result}"
         "\n"
-        "Combine the result for more readability. Your response should always be in HTML format inside a <div> tag. Make sure to include any inline code with <pre> tag and multiline code within <code> tag.\n"
+        "Combine the result for more readability. Your response should always be in HTML format inside a <div> tag. Make sure to include any inline code within <b> tag and multiline code within <code> tag. You should only include code if explicitly requested by the user as user may not be familiar with code.\n"
         "\n"
         "response:"
     )
